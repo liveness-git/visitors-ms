@@ -1,0 +1,11 @@
+{
+	"key":"test-key-01",
+	"visitCompany": "ABC会社",
+	"visitorName": "来訪太郎",
+	"reservationName": "自社一郎",
+	"teaSupply": true,
+	"numberOfVisitor": 1,
+	"numberOfEmployee": 2,
+	"comment": "ホットコーヒーお願いします。",
+	"contactAddr": "内線123"
+}
