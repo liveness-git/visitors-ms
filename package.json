@@ -18,10 +18,11 @@
     "eslint": "5.16.0"
   },
   "scripts": {
-    "start": "NODE_ENV=production node app.js",
+    "start": "node app.js --prod",
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'",
-    "custom-tests": "echo \"(No other custom tests yet.)\" && echo"
+    "custom-tests": "echo \"(No other custom tests yet.)\" && echo",
+    "zip:master": "git archive master --format=zip -o visitors_ms_v1.0.0.zip"
   },
   "main": "app.js",
   "repository": {

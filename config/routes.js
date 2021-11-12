@@ -32,5 +32,9 @@ module.exports.routes = {
    * not match any of those, it is matched against static assets.             *
    *                                                                          *
    ***************************************************************************/
+  "GET /login": resolver,
+  "GET /logout": resolver,
   "GET /front": resolver,
+  "GET /outlook/list": resolver,
+  "GET /outlook/form": resolver,
 };
