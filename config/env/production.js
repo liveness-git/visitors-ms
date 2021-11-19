@@ -19,6 +19,9 @@
  * https://sailsjs.com/docs/concepts/deployment
  */
 
+const fs = require("fs");
+const path = require("path");
+
 module.exports = {
   /**************************************************************************
    *                                                                         *
@@ -321,7 +324,13 @@ module.exports = {
    * > https://sailsjs.com/config/*#?sailsconfigssl                          *
    *                                                                         *
    **************************************************************************/
-  ssl: false,
+  // ssl: false,
+  ssl: {
+    key: fs.readFileSync(
+      path.resolve(__dirname, "../../ssl/localhost+2-key.pem")
+    ),
+    cert: fs.readFileSync(path.resolve(__dirname, "../../ssl/localhost+2.pem")),
+  },
 
   /**************************************************************************
    *                                                                         *

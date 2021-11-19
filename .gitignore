@@ -132,4 +132,5 @@ lib-cov
 *.out
 *.pid
 
+ssl
 *.zip
