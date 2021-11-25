@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+  xsi:type="MailApp">
+  <Id>cacddb43-f4d6-4356-8307-a3d4885475b0</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>liveness</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Visitors for Microsoft">
+    <Override Locale="ja-jp" Value="Visitors for Microsoft" />
+  </DisplayName>
+  <Description DefaultValue="ローカル環境での開発用です。test"/>
+  <IconUrl DefaultValue="https://scarlet.liveness.co.jp/images/top-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://scarlet.liveness.co.jp/images/top-128.png" />
+  <SupportUrl DefaultValue="https://www.liveness.co.jp/"/>
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <!-- <Set Name="MailBox" MinVersion="1.5" /> -->
+      <Set Name="MailBox" MinVersion="1.9" />
+    </Sets>
+  </Requirements>
+
+  <!-- 各デバイスで実行されるフォームのUX設定。web上のクラシックOutlookとOutlook 2013でのみ利用 -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:3000/outlook/form" />
+        <RequestedHeight>350</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+    <Form xsi:type="ItemEdit">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:3000/outlook/form" />
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteItem</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Appointment" FormType="ReadOrEdit" />
+  </Rule>
+
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.9">
+        <bt:Set Name="Mailbox" />
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <!-- 会議の出席者に表示されるフォームのリボンにボタンを配置 -->
+          <ExtensionPoint xsi:type="AppointmentAttendeeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="apptAttendeeGroup">
+                <Label resid="groupLabel" />
+                <Control xsi:type="Button" id="apptAttendeeListOpenButton">
+                  <Label resid="listOpenButtonLabel" />
+                  <Supertip>
+                    <Title resid="listOpenButtonSuperTipTitle" />
+                    <Description resid="listOpenButtonSuperTipDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="form-icon-16" />
+                    <bt:Image size="32" resid="form-icon-32" />
+                    <bt:Image size="80" resid="form-icon-80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="visitorsListUrl" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="apptAttendeeFormOpenButton">
+                  <Label resid="formOpenButtonLabel" />
+                  <Supertip>
+                    <Title resid="readformOpenButtonTipTitle" />
+                    <Description resid="readformOpenButtonTipDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="form-icon-16" />
+                    <bt:Image size="32" resid="form-icon-32" />
+                    <bt:Image size="80" resid="form-icon-80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="visitorsReadFormUrl" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
+          <!-- 会議の開催者に表示されるフォームのリボンにボタンを配置 -->
+          <ExtensionPoint xsi:type="AppointmentOrganizerCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="apptOrganizerGroup">
+                <Label resid="groupLabel" />
+                <Control xsi:type="Button" id="apptOrganizerListOpenButton">
+                  <Label resid="listOpenButtonLabel" />
+                  <Supertip>
+                    <Title resid="listOpenButtonSuperTipTitle" />
+                    <Description resid="listOpenButtonSuperTipDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="form-icon-16" />
+                    <bt:Image size="32" resid="form-icon-32" />
+                    <bt:Image size="80" resid="form-icon-80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="visitorsListUrl" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="apptOrganizerFormOpenButton">
+                  <Label resid="formOpenButtonLabel" />
+                  <Supertip>
+                    <Title resid="inputformOpenButtonTipTitle" />
+                    <Description resid="inputformOpenButtonTipDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="form-icon-16" />
+                    <bt:Image size="32" resid="form-icon-32" />
+                    <bt:Image size="80" resid="form-icon-80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="visitorsInputFormUrl" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <!-- Top icon -->
+        <bt:Image id="top-icon-16" DefaultValue="https://scarlet.liveness.co.jp/images/top-16.png" />
+        <bt:Image id="top-icon-32" DefaultValue="https://scarlet.liveness.co.jp/images/top-32.png" />
+        <bt:Image id="top-icon-80" DefaultValue="https://scarlet.liveness.co.jp/images/top-80.png" />
+        <!-- List icon -->
+        <bt:Image id="list-icon-16" DefaultValue="https://scarlet.liveness.co.jp/images/list-16.png" />
+        <bt:Image id="list-icon-32" DefaultValue="https://scarlet.liveness.co.jp/images/list-32.png" />
+        <bt:Image id="list-icon-80" DefaultValue="https://scarlet.liveness.co.jp/images/list-80.png" />
+        <!-- Form icon -->
+        <bt:Image id="form-icon-16" DefaultValue="https://scarlet.liveness.co.jp/images/form-16.png" />
+        <bt:Image id="form-icon-32" DefaultValue="https://scarlet.liveness.co.jp/images/form-32.png" />
+        <bt:Image id="form-icon-80" DefaultValue="https://scarlet.liveness.co.jp/images/form-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="visitorsListUrl" DefaultValue="https://localhost:3000/outlook/list" />
+        <bt:Url id="visitorsReadFormUrl" DefaultValue="https://localhost:3000/outlook/form" />
+        <bt:Url id="visitorsInputFormUrl" DefaultValue="https://localhost:3000/outlook/form" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="Visitors" />
+        <bt:String id="listOpenButtonLabel" DefaultValue="来訪者一覧" />
+        <bt:String id="formOpenButtonLabel" DefaultValue="来訪者情報" />
+        <bt:String id="listOpenButtonSuperTipTitle" DefaultValue="来訪者一覧を表示します" />
+        <bt:String id="readformOpenButtonTipTitle" DefaultValue="来訪者情報を表示します" />
+        <bt:String id="inputformOpenButtonTipTitle" DefaultValue="来訪者情報を編集します" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="listOpenButtonSuperTipDesc" DefaultValue="来訪者一覧の説明文を入力" />
+        <bt:String id="readformOpenButtonTipDesc" DefaultValue="出席者側に表示されるフォームの説明文を入力" />
+        <bt:String id="inputformOpenButtonTipDesc" DefaultValue="主催者側に表示されるフォームの説明文を入力" />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
