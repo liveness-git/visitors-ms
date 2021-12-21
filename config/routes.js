@@ -35,7 +35,4 @@ module.exports.routes = {
   "GET /login": resolver,
   "GET /logout": resolver,
   "GET /front": resolver,
-  "GET /outlook/list": resolver,
-  "GET /outlook/inputform": resolver,
-  "GET /outlook/readform": resolver,
 };

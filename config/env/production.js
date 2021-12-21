@@ -325,12 +325,6 @@ module.exports = {
    *                                                                         *
    **************************************************************************/
   // ssl: false,
-  ssl: {
-    key: fs.readFileSync(
-      path.resolve(__dirname, "../../ssl/localhost+2-key.pem")
-    ),
-    cert: fs.readFileSync(path.resolve(__dirname, "../../ssl/localhost+2.pem")),
-  },
 
   /**************************************************************************
    *                                                                         *
@@ -356,5 +350,23 @@ module.exports = {
     // sails_custom__stripeSecret=sk_prod__fake_Nfgh82401348jaDa3lkZ0d9Hm
     // ```
     //--------------------------------------------------------------------------
+  },
+
+  visitors: {
+    front: {
+      credential: {
+        tenant_id: "",
+        client_id: "",
+        username: "",
+        password: "",
+      },
+    },
+    main: {
+      credential: {
+        tenant_id: "",
+        client_id: "",
+      },
+    },
+    timezone: "Asia/Tokyo",
   },
 };
