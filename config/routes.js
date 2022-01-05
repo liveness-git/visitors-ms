@@ -35,4 +35,13 @@ module.exports.routes = {
   "GET /login": resolver,
   "GET /logout": resolver,
   "GET /front": resolver,
+  "GET /signin": resolver,
+  "GET /main": resolver,
+  "GET /oauth/signin": "OauthController.signin",
+  "GET /oauth/redirect": resolver,
+  "GET /oauth/callback": "OauthController.redirect",
+  "GET /oauth/signout": "OauthController.signout",
+  "GET /user/me": "UserController.me",
+  "GET /user/email": "UserController.email",
+  "GET /": resolver,
 };

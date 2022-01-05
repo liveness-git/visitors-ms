@@ -353,20 +353,15 @@ module.exports = {
   },
 
   visitors: {
-    front: {
-      credential: {
-        tenant_id: "",
-        client_id: "",
-        username: "",
-        password: "",
-      },
+    credential: {
+      tenant_id: "",
+      client_id: "",
+      cloud_instance_Id: "",
+      client_secret: "",
+      username: "",
+      password: "",
+      redirectUri: "",
     },
-    main: {
-      credential: {
-        tenant_id: "",
-        client_id: "",
-      },
-    },
-    timezone: "Asia/Tokyo",
+    timezone: "",
   },
 };

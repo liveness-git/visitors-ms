@@ -17,7 +17,6 @@ module.exports = {
     }
   },
 
-  // getTodaysEvents: async (req, res) => {
   test: async (req, res) => {
     try {
       const $ = await MSGraph.getTokenAndEmail(req);
@@ -29,18 +28,5 @@ module.exports = {
     } catch (err) {
       return res.status(400).json({ body: err.message });
     }
-    // .pipe(
-    //   concatMap(($) =>
-    //     MSGraph.getCalendarEvents($.token.access_token, $.email)
-    //   ),
-    //   reduce((acc, event) => {
-    //     // sails.log.info('Add event to array', event, acc.length);
-    //     acc.push(event);
-    //     return acc;
-    //   }, []),
-    //   // tap((events) => sails.log.info('Got events', events)),
-    //   map((events) => res.json(events))
-    // )
-    // .toPromise();
   },
 };
