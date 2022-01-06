@@ -10,7 +10,7 @@ module.exports = {
     accessToken,
     email,
     conditions = {
-      startDateTime: moment().startOf("date").add(-1, "months").format(),
+      startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
       orderBy: "start/dateTime",
     }

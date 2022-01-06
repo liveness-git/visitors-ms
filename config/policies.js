@@ -20,4 +20,7 @@ module.exports.policies = {
   UserController: {
     "*": "isMsSignedIn",
   },
+  EventController: {
+    "*": "isMsSignedIn",
+  },
 };

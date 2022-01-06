@@ -43,5 +43,6 @@ module.exports.routes = {
   "GET /oauth/signout": "OauthController.signout",
   "GET /user/me": "UserController.me",
   "GET /user/email": "UserController.email",
+  "GET /event/visitlist": "EventController.visitList",
   "GET /": resolver,
 };
