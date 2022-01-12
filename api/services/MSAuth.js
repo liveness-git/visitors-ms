@@ -19,9 +19,31 @@ const config = {
   },
 };
 
+const requestScopes = ["user.read"]; // TODO: これでいいか要確認
+
+const msalApp = new msal.ConfidentialClientApplication(config);
+
 module.exports = {
-  createMsalAppObject: () => {
-    // Create msal application object
-    return new msal.ConfidentialClientApplication(config);
+  requestScopes,
+  msalApp,
+
+  acquireToken: async (localAccountId) => {
+    const msalTokenCache = msalApp.getTokenCache();
+    const account = await msalTokenCache.getAccountByLocalId(localAccountId);
+    // Build silent request
+    const silentRequest = {
+      account: account,
+      scopes: requestScopes,
+    };
+    // Acquire Token Silently to be used in Resource API calll
+    return msalApp
+      .acquireTokenSilent(silentRequest)
+      .then((response) => {
+        return response.accessToken;
+      })
+      .catch((error) => {
+        console.log(error);
+        return error;
+      });
   },
 };

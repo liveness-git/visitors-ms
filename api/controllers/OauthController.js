@@ -8,14 +8,14 @@
 const MSAuth = require("../services/MSAuth");
 
 // Create msal application object
-const cca = MSAuth.createMsalAppObject();
+const cca = MSAuth.msalApp;
 const redirectUri = sails.config.visitors.credential.redirectUri;
 
 module.exports = {
   signin: async (req, res) => {
     try {
       const authCodeUrlParameters = {
-        scopes: ["user.read"], // TODO: これでいいか要確認
+        scopes: MSAuth.requestScopes,
         redirectUri: redirectUri,
       };
 
@@ -36,7 +36,7 @@ module.exports = {
     try {
       const tokenRequest = {
         code: req.query.code, // 認可コード
-        scopes: ["user.read"], // TODO: これでいいか要確認
+        scopes: MSAuth.requestScopes,
         redirectUri: redirectUri,
       };
 
@@ -44,10 +44,11 @@ module.exports = {
       cca
         .acquireTokenByCode(tokenRequest)
         .then((response) => {
+          // console.log("response: ", response);
           req.session.user = {
             email: response.account.username,
             name: response.account.name,
-            accessToken: response.accessToken,
+            localAccountId: response.account.localAccountId,
           };
           return res.json({ ok: true });
         })
@@ -60,16 +61,18 @@ module.exports = {
     }
   },
 
-  signout: (req, res) => {
+  signout: async (req, res) => {
     if (!req.session.user) {
       return res.ok();
     }
-    // TODO:msal内のキャッシュ削除とAZUL側のサインアウト
-    // const accounts = cca.getTokenCache().getAllAccounts();
-    // // filter on the account that you want to delete from the cache.
-    // // I take the first one here to keep the code sample short
-    // const account = accounts[0];
-    // cca.getTokenCache().removeAccount(account);
+    // console.log("AllAccounts : ", cca.getTokenCache().getAllAccounts());
+
+    // msal内のキャッシュ削除 (Azure側のサインアウトは別途対応が必要）
+    const msalTokenCache = cca.getTokenCache();
+    const account = await msalTokenCache.getAccountByLocalId(
+      req.session.user.localAccountId
+    );
+    msalTokenCache.removeAccount(account);
 
     req.session.user = null;
 

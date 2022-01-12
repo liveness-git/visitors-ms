@@ -5,6 +5,7 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
 const moment = require("moment-timezone");
 
@@ -12,9 +13,13 @@ module.exports = {
   visitList: async (req, res) => {
     try {
       const timestamp = Number(req.query.timestamp);
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
       // graphAPIからevent取得
       const events = await MSGraph.getCalendarEvents(
-        req.session.user.accessToken,
+        accessToken,
         req.session.user.email,
         {
           startDateTime: moment(timestamp).startOf("date").add(1, "s").format(),
@@ -42,9 +47,6 @@ module.exports = {
       //     numberOfEmployee: 2,
       //     comment: "ホットコーヒーお願いします。",
       //     contactAddr: "内線123",
-      //     checkIn: "yyyy/mm/dd hh:mm:ss",
-      //     checkOut: "yyyy/mm/dd hh:mm:ss",
-      //     visitorCardNumber: "test1",
       //   },
       //   {
       //     apptTime: "10:30-11:30",
@@ -57,9 +59,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "田中次郎",
       //     contactAddr: "内線777",
-      //     checkIn: "yyyy/mm/dd hh:mm:ss",
-      //     checkOut: "",
-      //     visitorCardNumber: "test2",
       //   },
       //   {
       //     apptTime: "13:00-14:00",
@@ -72,9 +71,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "自社一郎",
       //     contactAddr: "内線123",
-      //     checkIn: "",
-      //     checkOut: "",
-      //     visitorCardNumber: "",
       //   },
       //   {
       //     apptTime: "13:00-14:00",
@@ -87,9 +83,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "○山○子",
       //     contactAddr: "内線○○○",
-      //     checkIn: "",
-      //     checkOut: "",
-      //     visitorCardNumber: "",
       //   },
       //   {
       //     apptTime: "13:00-14:00",
@@ -102,9 +95,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "○山○子",
       //     contactAddr: "内線○○○",
-      //     checkIn: "",
-      //     checkOut: "",
-      //     visitorCardNumber: "",
       //   },
       //   {
       //     apptTime: "13:00-14:00",
@@ -117,9 +107,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "○山○子",
       //     contactAddr: "内線○○○",
-      //     checkIn: "",
-      //     checkOut: "",
-      //     visitorCardNumber: "",
       //   },
       //   {
       //     apptTime: "13:00-14:00",
@@ -132,9 +119,6 @@ module.exports = {
       //     comment: "",
       //     reservationName: "○山○子",
       //     contactAddr: "内線○○○",
-      //     checkIn: "",
-      //     checkOut: "",
-      //     visitorCardNumber: "",
       //   },
       // ]);
     } catch (err) {
