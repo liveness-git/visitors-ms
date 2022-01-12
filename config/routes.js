@@ -32,17 +32,20 @@ module.exports.routes = {
    * not match any of those, it is matched against static assets.             *
    *                                                                          *
    ***************************************************************************/
-  "GET /login": resolver,
-  "GET /logout": resolver,
+  // frontend
+  "GET /front/login": resolver,
   "GET /front": resolver,
-  "GET /signin": resolver,
+  "GET /login": resolver,
   "GET /main": resolver,
+  // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,
   "GET /oauth/callback": "OauthController.redirect",
   "GET /oauth/signout": "OauthController.signout",
+  // backend
   "GET /user/me": "UserController.me",
   "GET /user/email": "UserController.email",
   "GET /event/visitlist": "EventController.visitList",
+  // default
   "GET /": resolver,
 };
