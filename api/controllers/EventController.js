@@ -31,6 +31,7 @@ module.exports = {
         }
       );
       //TODO: type=rooms/free のparam追加すること！！
+      //TODO: visitors関連があるデータだけに絞り込むこと！！
       const conferences = events.filter((event) => event.locations.length > 0);
 
       return res.json(conferences);
