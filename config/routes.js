@@ -46,6 +46,8 @@ module.exports.routes = {
   "GET /user/me": "UserController.me",
   "GET /user/email": "UserController.email",
   "GET /event/visitlist": "EventController.visitList",
+  "POST /event/addevent": "EventController.addEvent",
+
   // default
   "GET /": resolver,
 };

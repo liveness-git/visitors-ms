@@ -5,7 +5,10 @@ const OAuth2 = require("./OAuth2");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
+const extensionName = "jp.co.liveness.visitors";
+
 module.exports = {
+  extensionName,
   getCalendarEvents: (
     accessToken,
     email,
@@ -30,7 +33,10 @@ module.exports = {
       },
     }
   ) => {
-    const path = "calendar/calendarView";
+    // オープン拡張機能の取得が出来るようにcalendarView→eventsに変更
+    // const path = "calendar/calendarView";
+    const path = "calendar/events";
+
     if (!!conditions) {
       options.params = conditions;
     }
@@ -64,6 +70,21 @@ module.exports = {
     return first.concat(next);
   },
 
+  postEvent: async (accessToken, email, params) => {
+    const path = "events";
+    const data = {
+      ...params,
+    };
+    const $ = await MSGraph.request(accessToken, email, path, {
+      method: "POST",
+      data: data,
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    });
+    return $.data;
+  },
+
   getToken: async () => {
     const token = await OAuth2.getValidToken();
     return { token: token };
@@ -94,4 +115,7 @@ module.exports = {
   },
 
   getTimeZone: () => sails.config.visitors.timezone || "Asia/Tokyo",
+
+  getDateTimeFormat: (timestamp) =>
+    moment(timestamp).format("YYYY-MM-DD[T]HH:mm:ss"),
 };

@@ -14,6 +14,7 @@
     "form-urlencoded": "^6.0.5",
     "grunt": "1.0.4",
     "moment-timezone": "^0.5.34",
+    "p-iteration": "^1.1.8",
     "sails": "^1.5.0",
     "sails-hook-grunt": "^5.0.0",
     "sails-hook-orm": "^4.0.0",
