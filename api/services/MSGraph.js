@@ -116,6 +116,9 @@ module.exports = {
 
   getTimeZone: () => sails.config.visitors.timezone || "Asia/Tokyo",
 
-  getDateTimeFormat: (timestamp) =>
+  getGraphDateTime: (timestamp) =>
     moment(timestamp).format("YYYY-MM-DD[T]HH:mm:ss"),
+
+  getTimeFormat: (str) =>
+    str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 };

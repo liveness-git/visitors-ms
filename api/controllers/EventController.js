@@ -8,31 +8,40 @@
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
 const moment = require("moment-timezone");
-const { filter } = require("p-iteration");
+const { filter, map } = require("p-iteration");
 
 module.exports = {
   addEvent: async (req, res) => {
     try {
-      // const data = req.body;
-      // console.log("post data --------------", req.body);
+      const data = req.body;
+      console.log("data --------------", req.body);
+
+      const visitor = await Visitor.create({
+        visitCompany: data.visitCompany,
+        visitorName: data.visitorName,
+        reservationName: data.reservationName,
+        teaSupply: data.teaSupply,
+        numberOfVisitor: Number(data.numberOfVisitor),
+        numberOfEmployee: Number(data.numberOfEmployee),
+        comment: data.comment,
+        contactAddr: data.contactAddr,
+      }).fetch();
 
       const room = await Room.findOne("61e610295f1b7020ccb2e002");
-      if (!room) {
-        throw Error("addEvent(): 会議室情報の取得に失敗しました");
-      }
 
       // TODO:debug用。日時の設定
       const startTimestamp = new Date("2022-01-27T11:30:00+0900").getTime();
       const endTimestamp = new Date("2022-01-27T12:30:00+0900").getTime();
 
-      const data = {
+      // graphAPIにpostするevent情報
+      const event = {
         subject: "テスト",
         start: {
-          dateTime: MSGraph.getDateTimeFormat(startTimestamp),
+          dateTime: MSGraph.getGraphDateTime(startTimestamp),
           timeZone: MSGraph.getTimeZone(),
         },
         end: {
-          dateTime: MSGraph.getDateTimeFormat(endTimestamp),
+          dateTime: MSGraph.getGraphDateTime(endTimestamp),
           timeZone: MSGraph.getTimeZone(),
         },
         location: {
@@ -42,15 +51,11 @@ module.exports = {
         },
         attendees: [
           {
-            emailAddress: {
-              address: req.session.user.email,
-            },
+            emailAddress: { address: req.session.user.email },
             type: "required",
           },
           {
-            emailAddress: {
-              address: room.email,
-            },
+            emailAddress: { address: room.email },
             type: "resource", //リソース
           },
         ],
@@ -58,25 +63,26 @@ module.exports = {
           {
             "@odata.type": "microsoft.graph.openTypeExtension",
             extensionName: MSGraph.extensionName,
-            visitorId: "61e6465648aba91cdcb7f9d5",
+            visitorId: visitor.id,
           },
         ],
       };
-      console.log("data----------------------", JSON.stringify(data));
+      console.log("event----------------------", JSON.stringify(event));
 
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
       // graphAPIからevent登録
-      const event = await MSGraph.postEvent(
+      const $ = await MSGraph.postEvent(
         accessToken,
         req.session.user.email,
-        data
+        event
       );
-      console.log("response----------------------", event);
-      res.json(event);
+      console.log("response----------------------", $);
+      return res.json({ success: true });
     } catch (err) {
+      sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -100,12 +106,12 @@ module.exports = {
           // startDateTime: moment(startTimestamp).format(), // for calendar/calendarView
           // endDateTime: moment(endTimestamp).format(), // for calendar/calendarView"
           $orderBy: "start/dateTime",
-          $filter: `start/dateTime ge '${MSGraph.getDateTimeFormat(
+          $filter: `start/dateTime ge '${MSGraph.getGraphDateTime(
             startTimestamp
-          )}' and end/dateTime lt '${MSGraph.getDateTimeFormat(
+          )}' and end/dateTime lt '${MSGraph.getGraphDateTime(
             endTimestamp
-          )}' and Extensions/any(f:f/id eq '${MSGraph.extensionName}')`,
-          $expand: `Extensions($filter=id eq '${MSGraph.extensionName}')`,
+          )}' and Extensions/any(f:f/id eq '${MSGraph.extensionName}')`, // 抽出条件に拡張プロパティがあることを追加
+          $expand: `Extensions($filter=id eq '${MSGraph.extensionName}')`, // 拡張プロパティの取得を追加
         }
       );
       // type=rooms/free のフィルタリング
@@ -115,97 +121,28 @@ module.exports = {
         });
         return !!room && room.type === req.query.type;
       });
-
-      return res.json(conferences);
-
-      // return res.json([
-      //   {
-      //     apptTime: "10:00-11:30",
-      //     roomName: "会議室１",
-      //     visitCompany: "ABC会社",
-      //     visitorName: "来訪太郎",
-      //     reservationName: "自社一郎",
-      //     teaSupply: true,
-      //     numberOfVisitor: 1,
-      //     numberOfEmployee: 2,
-      //     comment: "ホットコーヒーお願いします。",
-      //     contactAddr: "内線123",
-      //   },
-      //   {
-      //     apptTime: "10:30-11:30",
-      //     roomName: "会議室２",
-      //     visitCompany: "ZYX会社",
-      //     visitorName: "山田花子",
-      //     teaSupply: false,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 1,
-      //     comment: "",
-      //     reservationName: "田中次郎",
-      //     contactAddr: "内線777",
-      //   },
-      //   {
-      //     apptTime: "13:00-14:00",
-      //     roomName: "会議室１",
-      //     visitCompany: "ABC会社",
-      //     visitorName: "来訪太郎",
-      //     teaSupply: true,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 2,
-      //     comment: "",
-      //     reservationName: "自社一郎",
-      //     contactAddr: "内線123",
-      //   },
-      //   {
-      //     apptTime: "13:00-14:00",
-      //     roomName: "会議室○",
-      //     visitCompany: "○○会社",
-      //     visitorName: "○田○郎",
-      //     teaSupply: false,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 2,
-      //     comment: "",
-      //     reservationName: "○山○子",
-      //     contactAddr: "内線○○○",
-      //   },
-      //   {
-      //     apptTime: "13:00-14:00",
-      //     roomName: "会議室○",
-      //     visitCompany: "○○会社",
-      //     visitorName: "○田○郎",
-      //     teaSupply: false,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 2,
-      //     comment: "",
-      //     reservationName: "○山○子",
-      //     contactAddr: "内線○○○",
-      //   },
-      //   {
-      //     apptTime: "13:00-14:00",
-      //     roomName: "会議室○",
-      //     visitCompany: "○○会社",
-      //     visitorName: "○田○郎",
-      //     teaSupply: false,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 2,
-      //     comment: "",
-      //     reservationName: "○山○子",
-      //     contactAddr: "内線○○○",
-      //   },
-      //   {
-      //     apptTime: "13:00-14:00",
-      //     roomName: "会議室○",
-      //     visitCompany: "○○会社",
-      //     visitorName: "○田○郎",
-      //     teaSupply: false,
-      //     numberOfVisitor: 2,
-      //     numberOfEmployee: 2,
-      //     comment: "",
-      //     reservationName: "○山○子",
-      //     contactAddr: "内線○○○",
-      //   },
-      // ]);
+      // GraphAPIのevent情報とVisitor情報をマージ
+      const result = await map(conferences, async (event) => {
+        const startTime = MSGraph.getTimeFormat(event.start.dateTime);
+        const endTime = MSGraph.getTimeFormat(event.end.dateTime);
+        const visitor = await Visitor.findOne(event.extensions[0].visitorId);
+        return {
+          apptTime: `${startTime}-${endTime}`,
+          roomName: event.location.displayName,
+          visitCompany: visitor.visitCompany,
+          visitorName: visitor.visitorName,
+          reservationName: visitor.reservationName,
+          teaSupply: visitor.teaSupply,
+          numberOfVisitor: visitor.numberOfVisitor,
+          numberOfEmployee: visitor.numberOfEmployee,
+          comment: visitor.comment,
+          contactAddr: visitor.contactAddr,
+        };
+      });
+      return res.json(result);
     } catch (err) {
-      return res.status(400).json({ body: err.message });
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
     }
   },
 };

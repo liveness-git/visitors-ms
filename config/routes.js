@@ -47,6 +47,9 @@ module.exports.routes = {
   "GET /user/email": "UserController.email",
   "GET /event/visitlist": "EventController.visitList",
   "POST /event/addevent": "EventController.addEvent",
+  "POST /visitor/create": "VisitorController.create",
+  "POST /visitor/update": "VisitorController.update",
+  "POST /visitor/delete": "VisitorController.delete",
 
   // default
   "GET /": resolver,

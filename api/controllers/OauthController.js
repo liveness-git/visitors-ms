@@ -28,6 +28,7 @@ module.exports = {
         })
         .catch((error) => console.log(JSON.stringify(error)));
     } catch (err) {
+      // sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -57,25 +58,31 @@ module.exports = {
           res.status(500).send(error);
         });
     } catch (err) {
+      // sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
     }
   },
 
   signout: async (req, res) => {
-    if (!req.session.user) {
+    try {
+      if (!req.session.user) {
+        return res.ok();
+      }
+      // console.log("AllAccounts : ", cca.getTokenCache().getAllAccounts());
+
+      // msal内のキャッシュ削除 (Azure側のサインアウトは別途対応が必要）
+      const msalTokenCache = cca.getTokenCache();
+      const account = await msalTokenCache.getAccountByLocalId(
+        req.session.user.localAccountId
+      );
+      msalTokenCache.removeAccount(account);
+
+      req.session.user = null;
+
       return res.ok();
+    } catch (err) {
+      // sails.log.error(err.message);
+      return res.status(400).json({ body: err.message });
     }
-    // console.log("AllAccounts : ", cca.getTokenCache().getAllAccounts());
-
-    // msal内のキャッシュ削除 (Azure側のサインアウトは別途対応が必要）
-    const msalTokenCache = cca.getTokenCache();
-    const account = await msalTokenCache.getAccountByLocalId(
-      req.session.user.localAccountId
-    );
-    msalTokenCache.removeAccount(account);
-
-    req.session.user = null;
-
-    return res.ok();
   },
 };
