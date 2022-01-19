@@ -80,7 +80,12 @@ module.exports = {
         event
       );
       console.log("response----------------------", $);
-      return res.json({ success: true });
+
+      if (!!$) {
+        return res.json({ success: true });
+      } else {
+        return res.json({ success: false });
+      }
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
@@ -127,6 +132,8 @@ module.exports = {
         const endTime = MSGraph.getTimeFormat(event.end.dateTime);
         const visitor = await Visitor.findOne(event.extensions[0].visitorId);
         return {
+          eventId: event.id,
+          visitorId: event.extensions[0].visitorId,
           apptTime: `${startTime}-${endTime}`,
           roomName: event.location.displayName,
           visitCompany: visitor.visitCompany,
@@ -141,7 +148,7 @@ module.exports = {
       });
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
+      // sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
     }
   },

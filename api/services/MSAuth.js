@@ -11,7 +11,7 @@ const config = {
   system: {
     loggerOptions: {
       loggerCallback(loglevel, message, containsPii) {
-        // console.log(message);
+        // sails.log.info(message);
       },
       piiLoggingEnabled: false,
       logLevel: msal.LogLevel.Verbose,

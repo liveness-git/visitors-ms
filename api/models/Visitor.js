@@ -10,14 +10,17 @@ module.exports = {
     //  ╔═╗╦═╗╦╔╦╗╦╔╦╗╦╦  ╦╔═╗╔═╗
     //  ╠═╝╠╦╝║║║║║ ║ ║╚╗╔╝║╣ ╚═╗
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
-    visitCompany: { type: "string" },
+    visitCompany: { type: "string", required: true },
     visitorName: { type: "string" },
-    teaSupply: { type: "boolean" },
+    teaSupply: { type: "boolean", defaultsTo: false },
     numberOfVisitor: { type: "number" },
     numberOfEmployee: { type: "number" },
     comment: { type: "string" },
-    reservationName: { type: "string" },
+    reservationName: { type: "string", required: true },
     contactAddr: { type: "string" },
+    checkIn: { type: "string" },
+    checkOut: { type: "string" },
+    visitorCardNumber: { type: "string" },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗

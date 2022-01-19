@@ -45,7 +45,6 @@ module.exports = {
       cca
         .acquireTokenByCode(tokenRequest)
         .then((response) => {
-          // console.log("response: ", response);
           req.session.user = {
             email: response.account.username,
             name: response.account.name,
