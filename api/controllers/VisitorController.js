@@ -5,6 +5,8 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const MSGraph = require("../services/MSGraph");
+
 module.exports = {
   create: async (req, res) => {
     try {
@@ -35,7 +37,25 @@ module.exports = {
 
   delete: async (req, res) => {
     try {
-      return res.json({ success: false });
+      // const data = req.body;
+      // const visitorId = data.visitorId;
+      // // visitorの削除
+      // const visitor = await Visitor.destroyOne(visitorId);
+      // if (!visitor) {
+      //   throw new Error("来訪情報の削除に失敗しました");
+      // }
+      // // eventからvisitorを削除
+      // const $ = await MSGraph.patchEvent(
+      //   accessToken,
+      //   req.session.user.email,
+      //   data.eventId,
+      //   {  [MSGraph.extensionId]: null }
+      // );
+      if (!!$) {
+        return res.json({ success: true });
+      } else {
+        return res.json({ success: false });
+      }
     } catch (err) {
       // sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });

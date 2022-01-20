@@ -27,6 +27,10 @@ module.exports = {
         contactAddr: data.contactAddr,
       }).fetch();
 
+      if (!visitor) {
+        throw new Error("来訪情報の登録に失敗しました");
+      }
+
       const room = await Room.findOne("61e610295f1b7020ccb2e002");
 
       // TODO:debug用。日時の設定
@@ -66,6 +70,12 @@ module.exports = {
             visitorId: visitor.id,
           },
         ],
+        // singleValueExtendedProperties: [
+        //   {
+        //     id: "String {a90c1a79-e39a-4fb0-925d-381c8380c4e0} Name visitor_id",
+        //     value: visitor.id,
+        //   },
+        // ],
       };
       console.log("event----------------------", JSON.stringify(event));
 
@@ -73,6 +83,15 @@ module.exports = {
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
+
+      // // スキーマ拡張機能の設定チェック
+      // const schemaExtension = await MSGraph.request(accessToken, email, "", {
+      //   url: "https://graph.microsoft.com/v1.0/schemaExtensions",
+      //   $filter: `id eq '${MSGraph.extensionId}'`,
+      // });
+      // if (!schemaExtension) {
+      // }
+
       // graphAPIからevent登録
       const $ = await MSGraph.postEvent(
         accessToken,
@@ -117,6 +136,7 @@ module.exports = {
             endTimestamp
           )}' and Extensions/any(f:f/id eq '${MSGraph.extensionName}')`, // 抽出条件に拡張プロパティがあることを追加
           $expand: `Extensions($filter=id eq '${MSGraph.extensionName}')`, // 拡張プロパティの取得を追加
+          // $expand: `singleValueExtendedProperties($filter=id eq 'String {a90c1a79-e39a-4fb0-925d-381c8380c4e0} Name visitor_id')`,
         }
       );
       // type=rooms/free のフィルタリング

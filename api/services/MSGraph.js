@@ -6,9 +6,11 @@ const OAuth2 = require("./OAuth2");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
 const extensionName = "jp.co.liveness.visitors";
+const extensionId = "liveness_visitors";
 
 module.exports = {
   extensionName,
+  extensionId,
   getCalendarEvents: (
     accessToken,
     email,
@@ -77,6 +79,21 @@ module.exports = {
     };
     const $ = await MSGraph.request(accessToken, email, path, {
       method: "POST",
+      data: data,
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    });
+    return $.data;
+  },
+
+  patchEvent: async (accessToken, email, eventId, params) => {
+    const path = `events/${eventId}`;
+    const data = {
+      ...params,
+    };
+    const $ = await MSGraph.request(accessToken, email, path, {
+      method: "PATCH",
       data: data,
       headers: {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
