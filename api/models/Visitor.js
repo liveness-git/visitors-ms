@@ -10,6 +10,7 @@ module.exports = {
     //  ╔═╗╦═╗╦╔╦╗╦╔╦╗╦╦  ╦╔═╗╔═╗
     //  ╠═╝╠╦╝║║║║║ ║ ║╚╗╔╝║╣ ╚═╗
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
+    iCalUId: { type: "string", required: true },
     visitCompany: { type: "string", required: true },
     visitorName: { type: "string" },
     teaSupply: { type: "boolean", defaultsTo: false },

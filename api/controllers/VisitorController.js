@@ -37,21 +37,11 @@ module.exports = {
 
   delete: async (req, res) => {
     try {
-      // const data = req.body;
-      // const visitorId = data.visitorId;
-      // // visitorの削除
-      // const visitor = await Visitor.destroyOne(visitorId);
-      // if (!visitor) {
-      //   throw new Error("来訪情報の削除に失敗しました");
-      // }
-      // // eventからvisitorを削除
-      // const $ = await MSGraph.patchEvent(
-      //   accessToken,
-      //   req.session.user.email,
-      //   data.eventId,
-      //   {  [MSGraph.extensionId]: null }
-      // );
-      if (!!$) {
+      const data = req.body;
+      const visitorId = data.visitorId;
+      // visitorの削除
+      const visitor = await Visitor.destroyOne(visitorId);
+      if (!!visitor) {
         return res.json({ success: true });
       } else {
         return res.json({ success: false });

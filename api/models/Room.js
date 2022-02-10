@@ -13,6 +13,7 @@ module.exports = {
     name: { type: "string", required: true },
     email: { type: "string", required: true },
     type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
+    sort: { type: "string" },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗

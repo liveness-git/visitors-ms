@@ -1,16 +1,8 @@
 const moment = require("moment-timezone");
-const OAuth2 = require("./OAuth2");
-// const { from, concat } = require("rxjs");
-// const { share, map, filter, concatMap } = require("rxjs/operators");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
-const extensionName = "jp.co.liveness.visitors";
-const extensionId = "liveness_visitors";
-
 module.exports = {
-  extensionName,
-  extensionId,
   getCalendarEvents: (
     accessToken,
     email,
@@ -102,33 +94,27 @@ module.exports = {
     return $.data;
   },
 
-  getToken: async () => {
-    const token = await OAuth2.getValidToken();
-    return { token: token };
-  },
-
-  getTokenAndEmail: async (req) => {
-    // const roomId = req.param("roomid");
-    // const room = await Room.findOne(roomId);
-    const token = await OAuth2.getValidToken();
-    // return { token: token, email: room.email };//TODO: emailを変数にすること！！
-    return { token: token, email: "tokyo9a@liveness.co.jp" };
-  },
-
   request: async (accessToken, email, path, options) => {
-    const _options = {
-      ...options,
-      url: options.url || `${baseUrl}/${email}/${path}`,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accepts: "application/json",
-        "Content-Type": "application/json; charset=utf-8",
-        // Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
-        ...options.headers,
-      },
-    };
-    sails.log.info(_options);
-    return await Http.request(_options);
+    try {
+      const _options = {
+        ...options,
+        url: options.url || `${baseUrl}/${email}/${path}`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accepts: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          // Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+          ...options.headers,
+        },
+      };
+      sails.log.info(_options);
+      return await Http.request(_options);
+    } catch (err) {
+      if (err.response.data) {
+        sails.log.error(err.response.data);
+      }
+      throw err;
+    }
   },
 
   getTimeZone: () => sails.config.visitors.timezone || "Asia/Tokyo",

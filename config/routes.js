@@ -45,6 +45,8 @@ module.exports.routes = {
   // backend
   "GET /user/me": "UserController.me",
   "GET /user/email": "UserController.email",
+  "GET /room/list": "RoomController.list",
+  "GET /room/choices": "RoomController.choices",
   "GET /event/visitlist": "EventController.visitList",
   "POST /event/addevent": "EventController.addEvent",
   "POST /visitor/create": "VisitorController.create",

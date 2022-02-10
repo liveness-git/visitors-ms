@@ -14,32 +14,17 @@ module.exports = {
   addEvent: async (req, res) => {
     try {
       const data = req.body;
-      console.log("data --------------", req.body);
 
-      const visitor = await Visitor.create({
-        visitCompany: data.visitCompany,
-        visitorName: data.visitorName,
-        reservationName: data.reservationName,
-        teaSupply: data.teaSupply,
-        numberOfVisitor: Number(data.numberOfVisitor),
-        numberOfEmployee: Number(data.numberOfEmployee),
-        comment: data.comment,
-        contactAddr: data.contactAddr,
-      }).fetch();
+      // 会議室の取得
+      const room = await Room.findOne(data.room);
 
-      if (!visitor) {
-        throw new Error("来訪情報の登録に失敗しました");
-      }
-
-      const room = await Room.findOne("61e610295f1b7020ccb2e002");
-
-      // TODO:debug用。日時の設定
-      const startTimestamp = new Date("2022-01-27T11:30:00+0900").getTime();
-      const endTimestamp = new Date("2022-01-27T12:30:00+0900").getTime();
+      // 日時の設定
+      const startTimestamp = new Date(data.startTime).getTime();
+      const endTimestamp = new Date(data.endTime).getTime();
 
       // graphAPIにpostするevent情報
       const event = {
-        subject: "テスト",
+        subject: data.subject,
         start: {
           dateTime: MSGraph.getGraphDateTime(startTimestamp),
           timeZone: MSGraph.getTimeZone(),
@@ -63,34 +48,12 @@ module.exports = {
             type: "resource", //リソース
           },
         ],
-        extensions: [
-          {
-            "@odata.type": "microsoft.graph.openTypeExtension",
-            extensionName: MSGraph.extensionName,
-            visitorId: visitor.id,
-          },
-        ],
-        // singleValueExtendedProperties: [
-        //   {
-        //     id: "String {a90c1a79-e39a-4fb0-925d-381c8380c4e0} Name visitor_id",
-        //     value: visitor.id,
-        //   },
-        // ],
       };
-      console.log("event----------------------", JSON.stringify(event));
 
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
-
-      // // スキーマ拡張機能の設定チェック
-      // const schemaExtension = await MSGraph.request(accessToken, email, "", {
-      //   url: "https://graph.microsoft.com/v1.0/schemaExtensions",
-      //   $filter: `id eq '${MSGraph.extensionId}'`,
-      // });
-      // if (!schemaExtension) {
-      // }
 
       // graphAPIからevent登録
       const $ = await MSGraph.postEvent(
@@ -98,9 +61,23 @@ module.exports = {
         req.session.user.email,
         event
       );
-      console.log("response----------------------", $);
+      if (!$) {
+        throw new Error("Microsoftのイベント登録に失敗しました");
+      }
 
-      if (!!$) {
+      const visitor = await Visitor.create({
+        iCalUId: $.iCalUId,
+        visitCompany: data.visitCompany,
+        visitorName: data.visitorName,
+        reservationName: data.reservationName,
+        teaSupply: data.teaSupply,
+        numberOfVisitor: Number(data.numberOfVisitor),
+        numberOfEmployee: Number(data.numberOfEmployee),
+        comment: data.comment,
+        contactAddr: data.contactAddr,
+      }).fetch();
+
+      if (!!visitor) {
         return res.json({ success: true });
       } else {
         return res.json({ success: false });
@@ -122,27 +99,33 @@ module.exports = {
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
+
       // graphAPIからevent取得
       const events = await MSGraph.getCalendarEvents(
         accessToken,
         req.session.user.email,
         {
-          // startDateTime: moment(startTimestamp).format(), // for calendar/calendarView
-          // endDateTime: moment(endTimestamp).format(), // for calendar/calendarView"
+          startDateTime: moment(startTimestamp).format(), // for calendar/calendarView
+          endDateTime: moment(endTimestamp).format(), // for calendar/calendarView"
           $orderBy: "start/dateTime",
           $filter: `start/dateTime ge '${MSGraph.getGraphDateTime(
             startTimestamp
-          )}' and end/dateTime lt '${MSGraph.getGraphDateTime(
-            endTimestamp
-          )}' and Extensions/any(f:f/id eq '${MSGraph.extensionName}')`, // 抽出条件に拡張プロパティがあることを追加
-          $expand: `Extensions($filter=id eq '${MSGraph.extensionName}')`, // 拡張プロパティの取得を追加
-          // $expand: `singleValueExtendedProperties($filter=id eq 'String {a90c1a79-e39a-4fb0-925d-381c8380c4e0} Name visitor_id')`,
+          )}' and end/dateTime lt '${MSGraph.getGraphDateTime(endTimestamp)}'`,
+          $select: `attendees,start,end,locations,subject,iCalUid`,
         }
       );
-      // type=rooms/free のフィルタリング
+      // return res.json(events);
+
+      // 会議室予約（type=rooms/free）のみにフィルタリング。
       const conferences = await filter(events, async (event) => {
+        if (
+          event.locations.length === 0 ||
+          !event.locations[0].hasOwnProperty("locationUri")
+        ) {
+          return false;
+        }
         const room = await Room.findOne({
-          email: event.location.locationUri,
+          email: event.locations[0].locationUri,
         });
         return !!room && room.type === req.query.type;
       });
@@ -150,25 +133,27 @@ module.exports = {
       const result = await map(conferences, async (event) => {
         const startTime = MSGraph.getTimeFormat(event.start.dateTime);
         const endTime = MSGraph.getTimeFormat(event.end.dateTime);
-        const visitor = await Visitor.findOne(event.extensions[0].visitorId);
-        return {
-          eventId: event.id,
-          visitorId: event.extensions[0].visitorId,
-          apptTime: `${startTime}-${endTime}`,
-          roomName: event.location.displayName,
-          visitCompany: visitor.visitCompany,
-          visitorName: visitor.visitorName,
-          reservationName: visitor.reservationName,
-          teaSupply: visitor.teaSupply,
-          numberOfVisitor: visitor.numberOfVisitor,
-          numberOfEmployee: visitor.numberOfEmployee,
-          comment: visitor.comment,
-          contactAddr: visitor.contactAddr,
-        };
+        const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
+        if (!!visitor) {
+          return {
+            eventId: event.id,
+            visitorId: visitor.id,
+            apptTime: `${startTime}-${endTime}`,
+            roomName: event.locations[0].displayName,
+            visitCompany: visitor.visitCompany,
+            visitorName: visitor.visitorName,
+            reservationName: visitor.reservationName,
+            teaSupply: visitor.teaSupply,
+            numberOfVisitor: visitor.numberOfVisitor,
+            numberOfEmployee: visitor.numberOfEmployee,
+            comment: visitor.comment,
+            contactAddr: visitor.contactAddr,
+          };
+        }
       });
-      return res.json(result);
+      return res.json(result.filter((v) => v));
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
     }
   },

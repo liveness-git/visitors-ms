@@ -30,12 +30,10 @@ module.exports = {
   acquireToken: async (localAccountId) => {
     const msalTokenCache = msalApp.getTokenCache();
     const account = await msalTokenCache.getAccountByLocalId(localAccountId);
-    // Build silent request
     const silentRequest = {
       account: account,
       scopes: requestScopes,
     };
-    // Acquire Token Silently to be used in Resource API calll
     return msalApp
       .acquireTokenSilent(silentRequest)
       .then((response) => {
