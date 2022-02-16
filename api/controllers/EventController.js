@@ -105,13 +105,12 @@ module.exports = {
         accessToken,
         req.session.user.email,
         {
-          startDateTime: moment(startTimestamp).format(), // for calendar/calendarView
-          endDateTime: moment(endTimestamp).format(), // for calendar/calendarView"
+          startDateTime: moment(startTimestamp).format(),
+          endDateTime: moment(endTimestamp).format(),
           $orderBy: "start/dateTime",
-          $filter: `start/dateTime ge '${MSGraph.getGraphDateTime(
-            startTimestamp
-          )}' and end/dateTime lt '${MSGraph.getGraphDateTime(endTimestamp)}'`,
-          $select: `attendees,start,end,locations,subject,iCalUid`,
+          // $filter: `start/dateTime ge '${MSGraph.getGraphDateTime(
+          //   startTimestamp
+          // )}' and end/dateTime lt '${MSGraph.getGraphDateTime(endTimestamp)}'`,
         }
       );
       // return res.json(events);

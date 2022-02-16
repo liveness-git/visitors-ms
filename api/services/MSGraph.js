@@ -9,7 +9,7 @@ module.exports = {
     conditions = {
       startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
-      orderBy: "start/dateTime",
+      $orderBy: "start/dateTime",
     }
   ) => {
     // sails.log('conditions', conditions);
@@ -27,9 +27,7 @@ module.exports = {
       },
     }
   ) => {
-    // オープン拡張機能の取得が出来るようにcalendarView→eventsに変更
-    // const path = "calendar/calendarView";
-    const path = "calendar/events";
+    const path = "calendar/calendarView";
 
     if (!!conditions) {
       options.params = conditions;
