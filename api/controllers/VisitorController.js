@@ -12,7 +12,7 @@ module.exports = {
     try {
       return res.ok;
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -27,10 +27,10 @@ module.exports = {
       if (!!visitor) {
         return res.json({ success: true });
       } else {
-        return res.json({ success: false });
+        throw new Error("The update process failed.");
       }
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
@@ -44,10 +44,10 @@ module.exports = {
       if (!!visitor) {
         return res.json({ success: true });
       } else {
-        return res.json({ success: false });
+        throw new Error("The deletion process failed.");
       }
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
     }
   },

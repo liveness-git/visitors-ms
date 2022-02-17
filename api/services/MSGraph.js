@@ -120,6 +120,8 @@ module.exports = {
   getGraphDateTime: (timestamp) =>
     moment(timestamp).format("YYYY-MM-DD[T]HH:mm:ss"),
 
+  getDateFormat: (str) => str.substring(0, str.indexOf("T")).replace(/-/g, "/"),
+
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 };

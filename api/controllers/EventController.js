@@ -13,6 +13,9 @@ const { filter, map } = require("p-iteration");
 module.exports = {
   addEvent: async (req, res) => {
     try {
+      // 関係性チェック
+      return res.json({ success: false, errors: { startTime: "test" } });
+
       const data = req.body;
 
       // 会議室の取得
@@ -61,10 +64,8 @@ module.exports = {
         req.session.user.email,
         event
       );
-      if (!$) {
-        throw new Error("Microsoftのイベント登録に失敗しました");
-      }
 
+      // visitor登録
       const visitor = await Visitor.create({
         iCalUId: $.iCalUId,
         visitCompany: data.visitCompany,
@@ -80,7 +81,7 @@ module.exports = {
       if (!!visitor) {
         return res.json({ success: true });
       } else {
-        return res.json({ success: false });
+        throw new Error("The registration process failed.");
       }
     } catch (err) {
       sails.log.error(err.message);
@@ -130,14 +131,16 @@ module.exports = {
       });
       // GraphAPIのevent情報とVisitor情報をマージ
       const result = await map(conferences, async (event) => {
-        const startTime = MSGraph.getTimeFormat(event.start.dateTime);
-        const endTime = MSGraph.getTimeFormat(event.end.dateTime);
         const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
         if (!!visitor) {
+          const startDate = MSGraph.getDateFormat(event.start.dateTime);
+          const startTime = MSGraph.getTimeFormat(event.start.dateTime);
+          const endTime = MSGraph.getTimeFormat(event.end.dateTime);
+
           return {
             eventId: event.id,
             visitorId: visitor.id,
-            apptTime: `${startTime}-${endTime}`,
+            apptTime: `${startDate} ${startTime}-${endTime}`,
             roomName: event.locations[0].displayName,
             visitCompany: visitor.visitCompany,
             visitorName: visitor.visitorName,
