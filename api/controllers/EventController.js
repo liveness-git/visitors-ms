@@ -13,9 +13,7 @@ const { filter, map } = require("p-iteration");
 module.exports = {
   addEvent: async (req, res) => {
     try {
-      // 関係性チェック
-      return res.json({ success: false, errors: { startTime: "test" } });
-
+      const errors = {};
       const data = req.body;
 
       // 会議室の取得
@@ -24,6 +22,17 @@ module.exports = {
       // 日時の設定
       const startTimestamp = new Date(data.startTime).getTime();
       const endTimestamp = new Date(data.endTime).getTime();
+
+      // イベント日時の関係性チェック
+      if (startTimestamp >= endTimestamp) {
+        const dateErrCode = "visitdialog.form.error.event-time";
+        errors.startTime = [dateErrCode];
+        errors.endTime = [dateErrCode];
+      }
+      // 入力エラーの場合
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
 
       // graphAPIにpostするevent情報
       const event = {
@@ -142,6 +151,7 @@ module.exports = {
             visitorId: visitor.id,
             apptTime: `${startDate} ${startTime}-${endTime}`,
             roomName: event.locations[0].displayName,
+            roomEmail: event.locations[0].locationUri,
             visitCompany: visitor.visitCompany,
             visitorName: visitor.visitorName,
             reservationName: visitor.reservationName,
