@@ -10,7 +10,15 @@ const MSGraph = require("../services/MSGraph");
 module.exports = {
   create: async (req, res) => {
     try {
-      return res.ok;
+      const data = req.body;
+
+      const visitor = await Visitor.create(data).fetch();
+
+      if (!!visitor) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The update process failed.");
+      }
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });

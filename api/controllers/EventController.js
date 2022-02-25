@@ -79,7 +79,6 @@ module.exports = {
         iCalUId: $.iCalUId,
         visitCompany: data.visitCompany,
         visitorName: data.visitorName,
-        reservationName: data.reservationName,
         teaSupply: data.teaSupply,
         numberOfVisitor: Number(data.numberOfVisitor),
         numberOfEmployee: Number(data.numberOfEmployee),
@@ -118,9 +117,6 @@ module.exports = {
           startDateTime: moment(startTimestamp).format(),
           endDateTime: moment(endTimestamp).format(),
           $orderBy: "start/dateTime",
-          // $filter: `start/dateTime ge '${MSGraph.getGraphDateTime(
-          //   startTimestamp
-          // )}' and end/dateTime lt '${MSGraph.getGraphDateTime(endTimestamp)}'`,
         }
       );
       // return res.json(events);
@@ -140,29 +136,41 @@ module.exports = {
       });
       // GraphAPIのevent情報とVisitor情報をマージ
       const result = await map(conferences, async (event) => {
+        const startDate = MSGraph.getDateFormat(event.start.dateTime);
+        const startTime = MSGraph.getTimeFormat(event.start.dateTime);
+        const endTime = MSGraph.getTimeFormat(event.end.dateTime);
+        const $ = {
+          iCalUId: event.iCalUId,
+          apptTime: `${startDate} ${startTime}-${endTime}`,
+          roomName: event.locations[0].displayName,
+          roomEmail: event.locations[0].locationUri,
+          reservationName: event.organizer.emailAddress.name,
+          isAuthor:
+            event.organizer.emailAddress.address === req.session.user.email,
+          visitorId: "",
+          visitCompany: "",
+          visitorName: "",
+          teaSupply: false,
+          numberOfVisitor: 0,
+          numberOfEmployee: 0,
+          comment: "",
+          contactAddr: "",
+        };
+
         const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
         if (!!visitor) {
-          const startDate = MSGraph.getDateFormat(event.start.dateTime);
-          const startTime = MSGraph.getTimeFormat(event.start.dateTime);
-          const endTime = MSGraph.getTimeFormat(event.end.dateTime);
-
-          return {
-            eventId: event.id,
-            visitorId: visitor.id,
-            apptTime: `${startDate} ${startTime}-${endTime}`,
-            roomName: event.locations[0].displayName,
-            roomEmail: event.locations[0].locationUri,
-            visitCompany: visitor.visitCompany,
-            visitorName: visitor.visitorName,
-            reservationName: visitor.reservationName,
-            teaSupply: visitor.teaSupply,
-            numberOfVisitor: visitor.numberOfVisitor,
-            numberOfEmployee: visitor.numberOfEmployee,
-            comment: visitor.comment,
-            contactAddr: visitor.contactAddr,
-          };
+          $.visitorId = visitor.id;
+          $.visitCompany = visitor.visitCompany;
+          $.visitorName = visitor.visitorName;
+          $.teaSupply = visitor.teaSupply;
+          $.numberOfVisitor = visitor.numberOfVisitor;
+          $.numberOfEmployee = visitor.numberOfEmployee;
+          $.comment = visitor.comment;
+          $.contactAddr = visitor.contactAddr;
         }
+        return $;
       });
+
       return res.json(result.filter((v) => v));
     } catch (err) {
       sails.log.error(err.message);

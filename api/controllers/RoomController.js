@@ -16,7 +16,8 @@ module.exports = {
   },
   choices: async (req, res) => {
     try {
-      const rooms = await Room.find({ type: req.query.type }).sort("sort ASC");
+      const query = req.query.type ? { type: req.query.type } : null;
+      const rooms = await Room.find(query).sort("sort ASC");
       return res.json(rooms);
     } catch (err) {
       sails.log.error(err.message);

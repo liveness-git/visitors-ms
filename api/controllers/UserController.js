@@ -6,12 +6,11 @@
  */
 
 module.exports = {
-  // セッション中のユーザ名を取得
+  // セッション中のユーザ情報を取得
   me: async (req, res) => {
-    return res.json(req.session.user.name);
-  },
-  // セッション中のメールアドレスを取得
-  email: async (req, res) => {
-    return res.json(req.session.user.email);
+    return res.json({
+      email: req.session.user.email,
+      name: req.session.user.name,
+    });
   },
 };
