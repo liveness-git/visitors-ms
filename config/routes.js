@@ -47,6 +47,7 @@ module.exports.routes = {
   "GET /room/list": "RoomController.list",
   "GET /room/choices": "RoomController.choices",
   "GET /event/visitlist": "EventController.visitList",
+  "GET /event/byroom": "EventController.byRoom",
   "POST /event/addevent": "EventController.addEvent",
   "POST /visitor/create": "VisitorController.create",
   "POST /visitor/update": "VisitorController.update",

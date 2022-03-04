@@ -3,6 +3,19 @@ const moment = require("moment-timezone");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
 module.exports = {
+  getSchedule: async (accessToken, email, data) => {
+    const path = "calendar/getSchedule";
+    const options = {
+      method: "POST",
+      data: data,
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+    const result = await MSGraph.request(accessToken, email, path, options);
+    return result.data.value;
+  },
+
   getCalendarEvents: (
     accessToken,
     email,
@@ -12,7 +25,6 @@ module.exports = {
       $orderBy: "start/dateTime",
     }
   ) => {
-    // sails.log('conditions', conditions);
     return MSGraph.requestCalendarView(accessToken, email, conditions);
   },
 

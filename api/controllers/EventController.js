@@ -121,8 +121,8 @@ module.exports = {
       );
       // return res.json(events);
 
-      // 会議室予約（type=rooms/free）のみにフィルタリング。
-      const conferences = await filter(events, async (event) => {
+      // event情報を会議室予約（type=rooms/free）のみにフィルタリング。
+      const targetEvents = await filter(events, async (event) => {
         if (
           event.locations.length === 0 ||
           !event.locations[0].hasOwnProperty("locationUri")
@@ -135,43 +135,81 @@ module.exports = {
         return !!room && room.type === req.query.type;
       });
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(conferences, async (event) => {
-        const startDate = MSGraph.getDateFormat(event.start.dateTime);
-        const startTime = MSGraph.getTimeFormat(event.start.dateTime);
-        const endTime = MSGraph.getTimeFormat(event.end.dateTime);
-        const $ = {
-          iCalUId: event.iCalUId,
-          apptTime: `${startDate} ${startTime}-${endTime}`,
-          roomName: event.locations[0].displayName,
-          roomEmail: event.locations[0].locationUri,
-          reservationName: event.organizer.emailAddress.name,
-          isAuthor:
-            event.organizer.emailAddress.address === req.session.user.email,
-          visitorId: "",
-          visitCompany: "",
-          visitorName: "",
-          teaSupply: false,
-          numberOfVisitor: 0,
-          numberOfEmployee: 0,
-          comment: "",
-          contactAddr: "",
-        };
-
-        const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
-        if (!!visitor) {
-          $.visitorId = visitor.id;
-          $.visitCompany = visitor.visitCompany;
-          $.visitorName = visitor.visitorName;
-          $.teaSupply = visitor.teaSupply;
-          $.numberOfVisitor = visitor.numberOfVisitor;
-          $.numberOfEmployee = visitor.numberOfEmployee;
-          $.comment = visitor.comment;
-          $.contactAddr = visitor.contactAddr;
-        }
-        return $;
+      const result = await map(targetEvents, async (event) => {
+        return await sails.helpers.attachVisitorData(
+          event,
+          req.session.user.email
+        );
       });
 
       return res.json(result.filter((v) => v));
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
+  byRoom: async (req, res) => {
+    try {
+      //会議室の取得
+      const query = req.query.type ? { type: req.query.type } : null;
+      const rooms = await Room.find(query).sort("sort ASC");
+
+      // 取得期間の設定
+      const timestamp = Number(req.query.timestamp);
+      const startTimestamp = moment(timestamp).startOf("date");
+      const endTimestamp = moment(timestamp).endOf("date");
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+
+      // graphAPIから空き時間情報
+      const schedules = await MSGraph.getSchedule(
+        accessToken,
+        req.session.user.email,
+        {
+          startTime: {
+            dateTime: MSGraph.getGraphDateTime(startTimestamp),
+            timeZone: MSGraph.getTimeZone(),
+          },
+          endTime: {
+            dateTime: MSGraph.getGraphDateTime(endTimestamp),
+            timeZone: MSGraph.getTimeZone(),
+          },
+          schedules: rooms.map((room) => room.email),
+        }
+      );
+
+      // graphAPIからevent取得
+      const events = await MSGraph.getCalendarEvents(
+        accessToken,
+        req.session.user.email,
+        {
+          startDateTime: moment(startTimestamp).format(),
+          endDateTime: moment(endTimestamp).format(),
+          $orderBy: "start/dateTime",
+        }
+      );
+      return res.json({ schedules: schedules, events: events });
+
+      // TODO:画面作成時にどちらが良いかに考えること！！
+      //
+      // 空き時間情報の配列の中に、該当イベントの情報も一緒にセット
+      // const targetEvents = schedules.map((schedule) => {
+      //   const isSameRoom = (event) => {
+      //     if (
+      //       event.locations.length === 0 ||
+      //       !event.locations[0].hasOwnProperty("locationUri")
+      //     ) {
+      //       return false;
+      //     }
+      //     return event.locations[0].locationUri === schedule.scheduleId;
+      //   };
+      //   return { ...schedule, event: events[events.findIndex(isSameRoom)] };
+      // });
+      // return res.json(targetEvents);
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });

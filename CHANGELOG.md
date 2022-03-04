@@ -1,5 +1,10 @@
 # visitors-ms
 
+## 0.0.0.23-2022-03-04
+
+- 会議室別のデータ取得作成
+- helper に attachVisitorData を作成
+
 ## 0.0.0.22-2022-02-25
 
 - 予約者名(reservationName)は MS から取得するよう変更。
