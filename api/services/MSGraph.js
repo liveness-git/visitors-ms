@@ -136,4 +136,9 @@ module.exports = {
 
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
+
+  getResourceStatus: (event) => {
+    const result = event.attendees.filter((value) => value.type === "resource");
+    return result[0].status.response;
+  },
 };

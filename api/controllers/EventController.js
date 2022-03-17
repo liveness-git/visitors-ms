@@ -132,7 +132,7 @@ module.exports = {
         const room = await Room.findOne({
           email: event.locations[0].locationUri,
         });
-        return !!room && room.type === req.query.type;
+        return !!room;
       });
       // GraphAPIのevent情報とVisitor情報をマージ
       const result = await map(targetEvents, async (event) => {

@@ -22,13 +22,16 @@ module.exports = {
     const startDate = MSGraph.getDateFormat(event.start.dateTime);
     const startTime = MSGraph.getTimeFormat(event.start.dateTime);
     const endTime = MSGraph.getTimeFormat(event.end.dateTime);
+    const resourceStatus = MSGraph.getResourceStatus(event);
     const result = {
       iCalUId: event.iCalUId,
+      subject: event.subject,
       apptTime: `${startDate} ${startTime}-${endTime}`,
       roomName: event.locations[0].displayName,
       roomEmail: event.locations[0].locationUri,
       reservationName: event.organizer.emailAddress.name,
       isAuthor: event.organizer.emailAddress.address === inputs.email,
+      resourceStatus: resourceStatus,
       visitorId: "",
       visitCompany: "",
       visitorName: "",
