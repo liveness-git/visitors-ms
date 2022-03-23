@@ -1,24 +1,24 @@
 /**
- * RoomController
+ * LocationController
  *
  * @description :: Server-side actions for handling incoming requests.
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
 module.exports = {
-  list: async (req, res) => {
+  choices: async (req, res) => {
     try {
-      return res.json("ok");
+      const Locations = await Location.find().sort("sort ASC");
+      return res.json(Locations);
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
     }
   },
-  choices: async (req, res) => {
+  first: async (req, res) => {
     try {
-      const location = await Location.findOne({ url: req.query.location });
-      const rooms = await Room.find({ location: location.id }).sort("sort ASC");
-      return res.json(rooms);
+      const Locations = await Location.find().sort("sort ASC");
+      return res.json(Locations[0]);
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });

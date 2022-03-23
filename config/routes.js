@@ -35,8 +35,9 @@ module.exports.routes = {
   // frontend
   "GET /front/login": resolver,
   "GET /front": resolver,
-  "GET /login": resolver,
-  "GET /main": resolver,
+  "GET /:location?/login": resolver,
+  "GET /:location/main/byroom": resolver,
+  "GET /:location/main": resolver,
   // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,
@@ -46,6 +47,8 @@ module.exports.routes = {
   "GET /user/me": "UserController.me",
   "GET /room/list": "RoomController.list",
   "GET /room/choices": "RoomController.choices",
+  "GET /location/choices": "LocationController.choices",
+  "GET /location/first": "LocationController.first",
   "GET /event/visitlist": "EventController.visitList",
   "GET /event/byroom": "EventController.byRoom",
   "POST /event/addevent": "EventController.addEvent",

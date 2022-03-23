@@ -1,5 +1,5 @@
 /**
- * Room.js
+ * Location.js
  *
  * @description :: A model definition represents a database table/collection.
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
@@ -11,10 +11,8 @@ module.exports = {
     //  ╠═╝╠╦╝║║║║║ ║ ║╚╗╔╝║╣ ╚═╗
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
     name: { type: "string", required: true },
-    email: { type: "string", required: true },
-    type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
+    url: { type: "string", required: true, unique: true },
     sort: { type: "string" },
-    teaSupply: { type: "boolean", defaultsTo: false },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
@@ -23,6 +21,6 @@ module.exports = {
     //  ╔═╗╔═╗╔═╗╔═╗╔═╗╦╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
-    location: { model: "location" },
+    rooms: { collection: "room" },
   },
 };
