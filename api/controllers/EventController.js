@@ -11,7 +11,7 @@ const moment = require("moment-timezone");
 const { filter, map } = require("p-iteration");
 
 module.exports = {
-  addEvent: async (req, res) => {
+  create: async (req, res) => {
     try {
       const errors = {};
       const data = req.body;
@@ -94,6 +94,49 @@ module.exports = {
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
+    }
+  },
+
+  delete: async (req, res) => {
+    try {
+      const data = req.body;
+      const visitorId = data.visitorId;
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+      // iCalUIdからevent取得
+      const $ = await MSGraph.getEventByIcaluid(
+        accessToken,
+        req.session.user.email,
+        data.iCalUId
+      );
+      if (!$) {
+        throw new Error("Could not obtain MSGraph Event to delete.");
+      }
+      // eventの削除
+      const event = MSGraph.deleteEvent(
+        accessToken,
+        req.session.user.email,
+        $.id
+      );
+      if (!event) {
+        throw new Error("Failed to delete MSGraph Event data.");
+      }
+
+      // visitorが存在する場合は、visitorの削除
+      if (visitorId) {
+        const visitor = await Visitor.destroyOne(visitorId);
+        if (!visitor) {
+          throw new Error("Failed to delete Visitor data.");
+        }
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
     }
   },
 

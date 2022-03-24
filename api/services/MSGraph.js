@@ -3,6 +3,21 @@ const moment = require("moment-timezone");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
 module.exports = {
+  getEventByIcaluid: async (accessToken, email, iCalUId) => {
+    const path = "events";
+    const options = {
+      method: "GET",
+      params: {
+        $filter: `iCalUId eq '${iCalUId}'`,
+      },
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+    const result = await MSGraph.request(accessToken, email, path, options);
+    return result.data.value[0];
+  },
+
   getSchedule: async (accessToken, email, data) => {
     const path = "calendar/getSchedule";
     const options = {
@@ -102,6 +117,17 @@ module.exports = {
       },
     });
     return $.data;
+  },
+
+  deleteEvent: async (accessToken, email, eventId) => {
+    const path = `events/${eventId}`;
+    const $ = await MSGraph.request(accessToken, email, path, {
+      method: "DELETE",
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    });
+    return $.data || null;
   },
 
   request: async (accessToken, email, path, options) => {
