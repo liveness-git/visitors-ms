@@ -13,54 +13,18 @@ const { filter, map } = require("p-iteration");
 module.exports = {
   create: async (req, res) => {
     try {
-      const errors = {};
-      const data = req.body;
+      const data = req.body.inputs;
 
-      // 会議室の取得
-      const room = await Room.findOne(data.room);
+      // event情報をgraphAPIに渡せるように成型
+      const [event, errors] = await MSGraph.generateEventData(
+        data,
+        req.session.user.email
+      );
 
-      // 日時の設定
-      const startTimestamp = new Date(data.startTime).getTime();
-      const endTimestamp = new Date(data.endTime).getTime();
-
-      // イベント日時の関係性チェック
-      if (startTimestamp >= endTimestamp) {
-        const dateErrCode = "visitdialog.form.error.event-time";
-        errors.startTime = [dateErrCode];
-        errors.endTime = [dateErrCode];
-      }
       // 入力エラーの場合
       if (!!Object.keys(errors).length) {
         return res.json({ success: false, errors: errors });
       }
-
-      // graphAPIにpostするevent情報
-      const event = {
-        subject: data.subject,
-        start: {
-          dateTime: MSGraph.getGraphDateTime(startTimestamp),
-          timeZone: MSGraph.getTimeZone(),
-        },
-        end: {
-          dateTime: MSGraph.getGraphDateTime(endTimestamp),
-          timeZone: MSGraph.getTimeZone(),
-        },
-        location: {
-          displayName: room.name, // outlookのスケジュール表に表示される文字列
-          locationType: "conferenceRoom",
-          locationEmailAddress: room.email,
-        },
-        attendees: [
-          {
-            emailAddress: { address: req.session.user.email },
-            type: "required",
-          },
-          {
-            emailAddress: { address: room.email },
-            type: "resource", //リソース
-          },
-        ],
-      };
 
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
@@ -97,9 +61,75 @@ module.exports = {
     }
   },
 
+  update: async (req, res) => {
+    try {
+      const dirtyFields = req.body.dirtyFields;
+      const data = req.body.inputs;
+      const visitorId = data.visitorId;
+
+      // event情報をgraphAPIに渡せるように成型
+      const [updateEvent, errors] = await MSGraph.generateEventData(
+        data,
+        req.session.user.email
+      );
+
+      // 入力エラーの場合
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
+
+      // 更新分フィールドのみ抽出
+      const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
+      console.log("変更分抽出：", params);
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+      // iCalUIdからevent取得
+      const $ = await MSGraph.getEventByIcaluid(
+        accessToken,
+        req.session.user.email,
+        data.iCalUId
+      );
+      if (!$) {
+        throw new Error("Could not obtain MSGraph Event to update.");
+      }
+
+      // eventの更新
+      const event = MSGraph.patchEvent(
+        accessToken,
+        req.session.user.email,
+        $.id,
+        params
+      );
+      if (!event) {
+        throw new Error("Failed to delete MSGraph Event data.");
+      }
+
+      // visitorの更新/作成
+      let visitor = null;
+      if (visitorId) {
+        // visitorが存在する場合はupdate
+        visitor = await Visitor.updateOne(visitorId).set(data);
+      } else {
+        // visitorが存在しない場合はcreate
+        visitor = await Visitor.create(data).fetch();
+      }
+      if (!visitor) {
+        throw new Error("Failed to update Visitor data.");
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
   delete: async (req, res) => {
     try {
-      const data = req.body;
+      const data = req.body.inputs;
       const visitorId = data.visitorId;
 
       // msalから有効なaccessToken取得
@@ -162,9 +192,11 @@ module.exports = {
           $orderBy: "start/dateTime",
         }
       );
-      // return res.json(events);
 
-      // event情報を会議室予約（type=rooms/free）のみにフィルタリング。
+      // ロケーションの取得
+      const location = await Location.findOne({ url: req.query.location });
+
+      // event情報を対象ロケーションの会議室予約のみにフィルタリング。
       const targetEvents = await filter(events, async (event) => {
         if (
           event.locations.length === 0 ||
@@ -174,6 +206,7 @@ module.exports = {
         }
         const room = await Room.findOne({
           email: event.locations[0].locationUri,
+          location: location.id,
         });
         return !!room;
       });
@@ -194,9 +227,11 @@ module.exports = {
 
   byRoom: async (req, res) => {
     try {
+      // ロケーションの取得
+      const location = await Location.findOne({ url: req.query.location });
+
       //会議室の取得
-      const query = req.query.type ? { type: req.query.type } : null;
-      const rooms = await Room.find(query).sort("sort ASC");
+      const rooms = await Room.find({ location: location.id }).sort("sort ASC");
 
       // 取得期間の設定
       const timestamp = Number(req.query.timestamp);

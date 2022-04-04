@@ -10,7 +10,7 @@ const MSGraph = require("../services/MSGraph");
 module.exports = {
   create: async (req, res) => {
     try {
-      const data = req.body;
+      const data = req.body.inputs;
 
       const visitor = await Visitor.create(data).fetch();
 
@@ -27,7 +27,7 @@ module.exports = {
 
   update: async (req, res) => {
     try {
-      const data = req.body;
+      const data = req.body.inputs;
       const visitorId = data.visitorId;
 
       const visitor = await Visitor.updateOne(visitorId).set(data);
@@ -45,7 +45,7 @@ module.exports = {
 
   delete: async (req, res) => {
     try {
-      const data = req.body;
+      const data = req.body.inputs;
       const visitorId = data.visitorId;
       // visitorの削除
       const visitor = await Visitor.destroyOne(visitorId);

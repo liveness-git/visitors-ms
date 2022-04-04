@@ -153,7 +153,80 @@ module.exports = {
     }
   },
 
+  generateEventData: async (data, userEmail) => {
+    // 会議室の取得
+    const room = await Room.findOne(data.room);
+
+    // 日時の設定
+    const startTimestamp = new Date(data.startTime).getTime();
+    const endTimestamp = new Date(data.endTime).getTime();
+
+    const errors = {};
+    // イベント日時の関係性チェック
+    if (startTimestamp >= endTimestamp) {
+      const dateErrCode = "visitdialog.form.error.event-time";
+      errors.startTime = [dateErrCode];
+      errors.endTime = [dateErrCode];
+    }
+    if (!!Object.keys(errors).length) {
+      return [{}, errors];
+    }
+
+    const event = {
+      subject: data.subject,
+      start: {
+        dateTime: MSGraph.getGraphDateTime(startTimestamp),
+        timeZone: MSGraph.getTimeZone(),
+      },
+      end: {
+        dateTime: MSGraph.getGraphDateTime(endTimestamp),
+        timeZone: MSGraph.getTimeZone(),
+      },
+      location: {
+        displayName: room.name, // outlookのスケジュール表に表示される文字列
+        locationType: "conferenceRoom",
+        locationEmailAddress: room.email,
+      },
+      attendees: [
+        {
+          emailAddress: { address: userEmail }, // TODO: フロントユーザーが後から変更かけた場合、この値が変更される可能性あり。要調査
+          type: "required",
+        },
+        {
+          emailAddress: { address: room.email },
+          type: "resource", //リソース
+        },
+      ],
+    };
+    return [event, errors];
+  },
+
+  pickDirtyFields: (updateEvent, dirtyFields) => {
+    const result = {};
+    Object.keys(dirtyFields).forEach((key) => {
+      switch (key) {
+        case "subject":
+          result["subject"] = updateEvent["subject"];
+          break;
+        case "startTime":
+          result["start"] = { ...updateEvent["start"] };
+          break;
+        case "endTime":
+          result["end"] = { ...updateEvent["end"] };
+          break;
+        case "room":
+          result["location"] = { ...updateEvent["location"] };
+          result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
+          break;
+        default:
+      }
+    });
+    return result;
+  },
+
   getTimeZone: () => sails.config.visitors.timezone || "Asia/Tokyo",
+
+  getTimestamp: (str) => new Date(str.substring(0, str.indexOf("."))).getTime(),
 
   getGraphDateTime: (timestamp) =>
     moment(timestamp).format("YYYY-MM-DD[T]HH:mm:ss"),

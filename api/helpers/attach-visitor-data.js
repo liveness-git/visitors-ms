@@ -27,6 +27,8 @@ module.exports = {
       iCalUId: event.iCalUId,
       subject: event.subject,
       apptTime: `${startDate} ${startTime}-${endTime}`,
+      startDateTime: MSGraph.getTimestamp(event.start.dateTime),
+      endDateTime: MSGraph.getTimestamp(event.end.dateTime),
       roomName: event.locations[0].displayName,
       roomEmail: event.locations[0].locationUri,
       reservationName: event.organizer.emailAddress.name,
