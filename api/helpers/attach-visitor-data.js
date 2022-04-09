@@ -22,26 +22,43 @@ module.exports = {
     const startDate = MSGraph.getDateFormat(event.start.dateTime);
     const startTime = MSGraph.getTimeFormat(event.start.dateTime);
     const endTime = MSGraph.getTimeFormat(event.end.dateTime);
-    const resourceStatus = MSGraph.getResourceStatus(event);
+    // 会議室ごとのオブジェクトに再加工
+    const locations = await MSGraph.reduceLocations(event);
+
+    const first = Object.keys(locations)[0];
+
+    console.log("ロケーションズ：", locations);
+    console.log("--------------------------------");
+
     const result = {
       iCalUId: event.iCalUId,
       subject: event.subject,
       apptTime: `${startDate} ${startTime}-${endTime}`,
       startDateTime: MSGraph.getTimestamp(event.start.dateTime),
       endDateTime: MSGraph.getTimestamp(event.end.dateTime),
-      roomName: event.locations[0].displayName,
-      roomEmail: event.locations[0].locationUri,
+      roomName: locations[first].displayName, //TODO:表での表示用
+      roomStatus: locations[first].status, // TODO:表での表示用
       reservationName: event.organizer.emailAddress.name,
       isAuthor: event.organizer.emailAddress.address === inputs.email,
-      resourceStatus: resourceStatus,
       visitorId: "",
       visitCompany: "",
       visitorName: "",
-      teaSupply: false,
-      numberOfVisitor: 0,
-      numberOfEmployee: 0,
+      resourcies: Object.keys(locations).reduce((newObj, room) => {
+        newObj[room] = {
+          roomName: locations[room].displayName,
+          roomEmail: locations[room].locationUri,
+          roomStatus: locations[room].status,
+          teaSupply: false,
+          numberOfVisitor: 0,
+          numberOfEmployee: 0,
+        };
+        return newObj;
+      }, {}),
       comment: "",
       contactAddr: "",
+      checkIn: "",
+      checkOut: "",
+      visitorCardNumber: "",
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
@@ -49,9 +66,12 @@ module.exports = {
       result.visitorId = visitor.id;
       result.visitCompany = visitor.visitCompany;
       result.visitorName = visitor.visitorName;
-      result.teaSupply = visitor.teaSupply;
-      result.numberOfVisitor = visitor.numberOfVisitor;
-      result.numberOfEmployee = visitor.numberOfEmployee;
+      // TODO:テスト未
+      // Object.keys(visitor.resourcies).map((room) => {
+      //   if (result.resourcies.hasOwnProperty(room)) {
+      //     result.resourcies[room].resourcies = { ...visitor.resourcies[room] };
+      //   }
+      // });
       result.comment = visitor.comment;
       result.contactAddr = visitor.contactAddr;
     }

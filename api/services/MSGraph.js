@@ -1,4 +1,5 @@
 const moment = require("moment-timezone");
+const { reduce } = require("p-iteration");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
@@ -236,8 +237,33 @@ module.exports = {
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
-  getResourceStatus: (event) => {
-    const result = event.attendees.filter((value) => value.type === "resource");
-    return result[0].status.response;
+  // イベントのLocationから会議室のみを抽出=> 必要情報を纏めて再定義
+  reduceLocations: async (event) => {
+    return await reduce(
+      event.locations,
+      async (result, current) => {
+        if (current.hasOwnProperty("locationUri")) {
+          const room = await Room.findOne({
+            email: current.locationUri,
+            // location: location.id,
+            // ↑ MS側からの登録の場合、visitorのロケーションを跨いて予約できるので絞り込まずに取得(コメントアウト)
+          });
+          if (!!room) {
+            // 会議室のステータスを取得
+            const attendee = event.attendees.find(
+              (value) =>
+                value.type === "resource" &&
+                value.hasOwnProperty("emailAddress") &&
+                value.emailAddress.address === room.email
+            );
+            const status = attendee.status ? attendee.status.response : null;
+            // 会議室IDをkeyとして再定義
+            result[room.id] = { ...current, status: status };
+          }
+        }
+        return result;
+      },
+      {}
+    );
   },
 };

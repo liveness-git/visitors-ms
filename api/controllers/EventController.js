@@ -8,7 +8,7 @@
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
 const moment = require("moment-timezone");
-const { filter, map } = require("p-iteration");
+const { filter, map, some } = require("p-iteration");
 
 module.exports = {
   create: async (req, res) => {
@@ -43,7 +43,7 @@ module.exports = {
         iCalUId: $.iCalUId,
         visitCompany: data.visitCompany,
         visitorName: data.visitorName,
-        teaSupply: data.teaSupply,
+        resourcies: data.resourcies,
         numberOfVisitor: Number(data.numberOfVisitor),
         numberOfEmployee: Number(data.numberOfEmployee),
         comment: data.comment,
@@ -190,6 +190,7 @@ module.exports = {
           startDateTime: moment(startTimestamp).format(),
           endDateTime: moment(endTimestamp).format(),
           $orderBy: "start/dateTime",
+          $select: "start,end,iCalUId,subject,organizer,locations,attendees",
         }
       );
 
@@ -198,17 +199,19 @@ module.exports = {
 
       // event情報を対象ロケーションの会議室予約のみにフィルタリング。
       const targetEvents = await filter(events, async (event) => {
-        if (
-          event.locations.length === 0 ||
-          !event.locations[0].hasOwnProperty("locationUri")
-        ) {
+        if (event.locations.length === 0) {
           return false;
         }
-        const room = await Room.findOne({
-          email: event.locations[0].locationUri,
-          location: location.id,
+        return await some(event.locations, async (eventLocation) => {
+          if (!eventLocation.hasOwnProperty("locationUri")) {
+            return false;
+          }
+          const room = await Room.findOne({
+            email: eventLocation.locationUri,
+            location: location.id,
+          });
+          return !!room;
         });
-        return !!room;
       });
       // GraphAPIのevent情報とVisitor情報をマージ
       const result = await map(targetEvents, async (event) => {
@@ -273,6 +276,7 @@ module.exports = {
       return res.json({ schedules: schedules, events: events });
 
       // TODO:画面作成時にどちらが良いかに考えること！！
+      // これを使うなら、locations[0]になっているので複数会議室に対応させること
       //
       // 空き時間情報の配列の中に、該当イベントの情報も一緒にセット
       // const targetEvents = schedules.map((schedule) => {
