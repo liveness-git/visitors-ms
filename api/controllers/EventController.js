@@ -43,9 +43,9 @@ module.exports = {
         iCalUId: $.iCalUId,
         visitCompany: data.visitCompany,
         visitorName: data.visitorName,
-        resourcies: data.resourcies,
-        numberOfVisitor: Number(data.numberOfVisitor),
-        numberOfEmployee: Number(data.numberOfEmployee),
+        resourcies: await sails.helpers.generateVisitorResourcies(
+          data.resourcies
+        ),
         comment: data.comment,
         contactAddr: data.contactAddr,
       }).fetch();
@@ -107,14 +107,20 @@ module.exports = {
         throw new Error("Failed to delete MSGraph Event data.");
       }
 
+      // リソース情報だけ再加工
+      const resourcies = await sails.helpers.generateVisitorResourcies(
+        data.resourcies
+      );
+      const newData = { ...data, resourcies: resourcies };
+
       // visitorの更新/作成
       let visitor = null;
       if (visitorId) {
         // visitorが存在する場合はupdate
-        visitor = await Visitor.updateOne(visitorId).set(data);
+        visitor = await Visitor.updateOne(visitorId).set(newData);
       } else {
         // visitorが存在しない場合はcreate
-        visitor = await Visitor.create(data).fetch();
+        visitor = await Visitor.create(newData).fetch();
       }
       if (!visitor) {
         throw new Error("Failed to update Visitor data.");
@@ -189,8 +195,10 @@ module.exports = {
         {
           startDateTime: moment(startTimestamp).format(),
           endDateTime: moment(endTimestamp).format(),
+          $filter: "isCancelled eq false",
           $orderBy: "start/dateTime",
-          $select: "start,end,iCalUId,subject,organizer,locations,attendees",
+          $select:
+            "start,end,iCalUId,subject,organizer,location,locations,attendees",
         }
       );
 

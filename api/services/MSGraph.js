@@ -156,7 +156,8 @@ module.exports = {
 
   generateEventData: async (data, userEmail) => {
     // 会議室の取得
-    const room = await Room.findOne(data.room);
+    const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
+    const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
 
     // 日時の設定
     const startTimestamp = new Date(data.startTime).getTime();
@@ -215,9 +216,12 @@ module.exports = {
         case "endTime":
           result["end"] = { ...updateEvent["end"] };
           break;
-        case "room":
-          result["location"] = { ...updateEvent["location"] };
-          result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
+        case "resourcies":
+          const roomId = Object.keys(dirtyFields.resourcies)[0]; //TODO:複数会議室未対応
+          if (!!dirtyFields.resourcies[roomId].roomForEdit) {
+            result["location"] = { ...updateEvent["location"] };
+            result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
+          }
           break;
         default:
       }
@@ -256,7 +260,8 @@ module.exports = {
                 value.hasOwnProperty("emailAddress") &&
                 value.emailAddress.address === room.email
             );
-            const status = attendee.status ? attendee.status.response : null;
+            const status = attendee ? attendee.status.response : "";
+
             // 会議室IDをkeyとして再定義
             result[room.id] = { ...current, status: status };
           }
