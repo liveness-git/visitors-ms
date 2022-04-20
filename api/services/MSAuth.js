@@ -24,7 +24,6 @@ const requestScopes = [
   "User.Read.All",
   "Calendars.Read",
   "Calendars.ReadWrite",
-  // "Contacts.Read", //for contacts
 ]; // TODO: これでいいか要確認
 
 const msalApp = new msal.ConfidentialClientApplication(config);

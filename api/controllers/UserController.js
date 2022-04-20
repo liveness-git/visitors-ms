@@ -48,27 +48,6 @@ module.exports = {
         };
       });
 
-      // // 連絡先一覧の取得
-      // const $ = await MSGraph.request(
-      //   accessToken,
-      //   req.session.user.email,
-      //   // "contacts", // MSGraphの取得URL
-      //   { method: "GET" }
-      // );
-      // const contacts = $.data.value;
-      // const result = _.flatten(
-      //   contacts.map((user) => {
-      //     return user.emailAddresses.map((email) => {
-      //       const name = user.displayName;
-      //       const address = email.address;
-      //       return {
-      //         name: `${name} <${address}>`,
-      //         email: address,
-      //       };
-      //     });
-      //   })
-      // );
-
       return res.json(result);
     } catch (err) {
       sails.log.error(err.message);
