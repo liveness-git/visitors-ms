@@ -45,6 +45,7 @@ module.exports.routes = {
   "GET /oauth/signout": "OauthController.signout",
   // backend
   "GET /user/me": "UserController.me",
+  "GET /user/addressbook": "UserController.addressbook",
   "GET /room/list": "RoomController.list",
   "GET /room/choices": "RoomController.choices",
   "GET /location/choices": "LocationController.choices",

@@ -19,7 +19,13 @@ const config = {
   },
 };
 
-const requestScopes = ["User.Read", "Calendars.Read", "Calendars.ReadWrite"]; // TODO: これでいいか要確認
+const requestScopes = [
+  "User.Read",
+  "User.Read.All",
+  "Calendars.Read",
+  "Calendars.ReadWrite",
+  // "Contacts.Read", //for contacts
+]; // TODO: これでいいか要確認
 
 const msalApp = new msal.ConfidentialClientApplication(config);
 

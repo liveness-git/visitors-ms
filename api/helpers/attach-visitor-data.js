@@ -42,6 +42,15 @@ module.exports = {
       visitorId: "",
       visitCompany: "",
       visitorName: "",
+      mailto: event.attendees.reduce((newArray, user) => {
+        if (
+          user.type === "required" &&
+          user.emailAddress.address !== event.organizer.emailAddress.address
+        ) {
+          newArray.push({ ...user.emailAddress });
+        }
+        return newArray;
+      }, []),
       resourcies: Object.keys(locations).reduce((newObj, room) => {
         newObj[room] = {
           roomName: locations[room].displayName,

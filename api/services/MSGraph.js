@@ -4,6 +4,7 @@ const { reduce } = require("p-iteration");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 
 module.exports = {
+  baseUrl,
   getEventByIcaluid: async (accessToken, email, iCalUId) => {
     const path = "events";
     const options = {
@@ -154,7 +155,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, userEmail) => {
+  generateEventData: async (data, authorEmail) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -174,6 +175,13 @@ module.exports = {
       return [{}, errors];
     }
 
+    const attendees = data.mailto.map((user) => {
+      return {
+        emailAddress: { ...user },
+        type: "required",
+      };
+    });
+
     const event = {
       subject: data.subject,
       start: {
@@ -191,13 +199,14 @@ module.exports = {
       },
       attendees: [
         {
-          emailAddress: { address: userEmail }, // TODO: フロントユーザーが後から変更かけた場合、この値が変更される可能性あり。要調査
+          emailAddress: { address: authorEmail }, // TODO: フロントユーザーが後から変更かけた場合、この値が変更される可能性あり。要調査
           type: "required",
         },
         {
           emailAddress: { address: room.email },
           type: "resource", //リソース
         },
+        ...attendees,
       ],
     };
     return [event, errors];
@@ -215,6 +224,9 @@ module.exports = {
           break;
         case "endTime":
           result["end"] = { ...updateEvent["end"] };
+          break;
+        case "mailto":
+          result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
           break;
         case "resourcies":
           const roomId = Object.keys(dirtyFields.resourcies)[0]; //TODO:複数会議室未対応
