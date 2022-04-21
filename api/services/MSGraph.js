@@ -203,7 +203,7 @@ module.exports = {
           type: "required",
         },
         {
-          emailAddress: { address: room.email },
+          emailAddress: { address: room.email }, // TODO:複数会議室未対応
           type: "resource", //リソース
         },
         ...attendees,
