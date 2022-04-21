@@ -42,15 +42,22 @@ module.exports = {
       visitorId: "",
       visitCompany: "",
       visitorName: "",
-      mailto: event.attendees.reduce((newArray, user) => {
-        if (
-          user.type === "required" &&
-          user.emailAddress.address !== event.organizer.emailAddress.address
-        ) {
-          newArray.push({ ...user.emailAddress });
-        }
-        return newArray;
-      }, []),
+      mailto: event.attendees.reduce(
+        (newObj, user) => {
+          if (
+            user.type !== "resource " &&
+            user.emailAddress.address !== event.organizer.emailAddress.address
+          ) {
+            if (_.isArray(newObj[user.type])) {
+              newObj[user.type].push({ ...user.emailAddress });
+            } else {
+              newObj[user.type] = [{ ...user.emailAddress }];
+            }
+          }
+          return newObj;
+        },
+        { required: [], optional: [] }
+      ),
       resourcies: Object.keys(locations).reduce((newObj, room) => {
         newObj[room] = {
           roomName: locations[room].displayName,

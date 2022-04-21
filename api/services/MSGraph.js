@@ -175,12 +175,15 @@ module.exports = {
       return [{}, errors];
     }
 
-    const attendees = data.mailto.map((user) => {
-      return {
-        emailAddress: { ...user },
-        type: "required",
-      };
-    });
+    const attendees = Object.keys(data.mailto).reduce((newObj, type) => {
+      newObj[type] = data.mailto[type].map((user) => {
+        return {
+          emailAddress: { ...user },
+          type: type,
+        };
+      });
+      return newObj;
+    }, {});
 
     const event = {
       subject: data.subject,
@@ -206,7 +209,8 @@ module.exports = {
           emailAddress: { address: room.email }, // TODO:複数会議室未対応
           type: "resource", //リソース
         },
-        ...attendees,
+        ...attendees.required,
+        ...attendees.optional,
       ],
     };
     return [event, errors];
