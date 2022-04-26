@@ -44,7 +44,7 @@ module.exports = {
         req.session.user.email,
         {
           startTime: {
-            dateTime: MSGraph.getGraphDateTime(Number(req.query.start)),
+            dateTime: MSGraph.getGraphDateTime(Number(req.query.start) + 1000), // 同時刻終了の予定があった場合、予約可能対象外になるので1ms進めて検索
             timeZone: MSGraph.getTimeZone(),
           },
           endTime: {
@@ -52,7 +52,7 @@ module.exports = {
             timeZone: MSGraph.getTimeZone(),
           },
           schedules: rooms.map((room) => room.email),
-          availabilityViewInterval: "5",
+          availabilityViewInterval: "5", //TODO: Interval config化？
         }
       );
       const result = rooms.filter((room) => {
