@@ -164,13 +164,8 @@ module.exports = {
     const startTimestamp = new Date(data.startTime).getTime();
     const endTimestamp = new Date(data.endTime).getTime();
 
+    // エラーチェック
     const errors = {};
-    // イベント日時の関係性チェック
-    if (startTimestamp >= endTimestamp) {
-      const dateErrCode = "visitdialog.form.error.event-time";
-      errors.startTime = [dateErrCode];
-      errors.endTime = [dateErrCode];
-    }
     if (!!Object.keys(errors).length) {
       return [{}, errors];
     }
