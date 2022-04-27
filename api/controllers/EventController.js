@@ -15,9 +15,15 @@ module.exports = {
     try {
       const data = req.body.inputs;
 
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(
         data,
+        accessToken,
         req.session.user.email
       );
 
@@ -25,11 +31,6 @@ module.exports = {
       if (!!Object.keys(errors).length) {
         return res.json({ success: false, errors: errors });
       }
-
-      // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
 
       // graphAPIからevent登録
       const $ = await MSGraph.postEvent(
@@ -67,9 +68,15 @@ module.exports = {
       const data = req.body.inputs;
       const visitorId = data.visitorId;
 
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+
       // event情報をgraphAPIに渡せるように成型
       const [updateEvent, errors] = await MSGraph.generateEventData(
         data,
+        accessToken,
         req.session.user.email
       );
 
@@ -82,10 +89,6 @@ module.exports = {
       const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
       console.log("変更分抽出：", params);
 
-      // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // iCalUIdからevent取得
       const $ = await MSGraph.getEventByIcaluid(
         accessToken,

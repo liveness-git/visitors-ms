@@ -33,6 +33,32 @@ module.exports = {
     return result.data.value;
   },
 
+  // roomsに渡した配列から予約可能な会議室のみに絞り込んで返す
+  getAvailableRooms: async (
+    accessToken,
+    email,
+    startTimestamp,
+    endTimestamp,
+    rooms
+  ) => {
+    const schedules = await MSGraph.getSchedule(accessToken, email, {
+      startTime: {
+        dateTime: MSGraph.getGraphDateTime(startTimestamp + 1000), // 同時刻終了の予定があった場合、予約可能対象外になるので1ms進めて検索
+        timeZone: MSGraph.getTimeZone(),
+      },
+      endTime: {
+        dateTime: MSGraph.getGraphDateTime(endTimestamp),
+        timeZone: MSGraph.getTimeZone(),
+      },
+      schedules: rooms,
+      availabilityViewInterval: "5", //TODO: Interval config化？
+    });
+    return rooms.filter((room) => {
+      const schedule = schedules.filter((sc) => sc.scheduleId === room);
+      return schedule[0].scheduleItems.length === 0;
+    });
+  },
+
   getCalendarEvents: (
     accessToken,
     email,
@@ -155,7 +181,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, authorEmail) => {
+  generateEventData: async (data, accessToken, authorEmail) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -164,11 +190,30 @@ module.exports = {
     const startTimestamp = new Date(data.startTime).getTime();
     const endTimestamp = new Date(data.endTime).getTime();
 
-    // エラーチェック
+    // エラーチェック------
     const errors = {};
+
+    if (data.mode !== "upd") {
+      //TODO: 更新時、空き会議室検索は未対応
+      // graphAPIから空き会議室を取得
+      const available = await MSGraph.getAvailableRooms(
+        accessToken,
+        authorEmail,
+        startTimestamp,
+        endTimestamp,
+        [room.email]
+      );
+      if (available.length === 0) {
+        const dateErrCode = "visitdialog.form.error.available-time";
+        errors.startTime = [dateErrCode];
+        errors.endTime = [dateErrCode];
+      }
+    }
+
     if (!!Object.keys(errors).length) {
       return [{}, errors];
     }
+    //------------------
 
     const attendees = Object.keys(data.mailto).reduce((newObj, type) => {
       newObj[type] = data.mailto[type].map((user) => {
