@@ -8,7 +8,7 @@
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
 const moment = require("moment-timezone");
-const { filter, map, some } = require("p-iteration");
+const { map } = require("p-iteration");
 
 module.exports = {
   create: async (req, res) => {
@@ -191,48 +191,24 @@ module.exports = {
         req.session.user.localAccountId
       );
 
-      // graphAPIからevent取得
-      const events = await MSGraph.getCalendarEvents(
+      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+      const events = await sails.helpers.getTargetFromEvents(
         accessToken,
         req.session.user.email,
-        {
-          startDateTime: moment(startTimestamp).format(),
-          endDateTime: moment(endTimestamp).format(),
-          $filter: "isCancelled eq false",
-          $orderBy: "start/dateTime",
-          $select:
-            "start,end,iCalUId,subject,organizer,location,locations,attendees",
-        }
+        startTimestamp,
+        endTimestamp,
+        req.query.location
       );
 
-      // ロケーションの取得
-      const location = await Location.findOne({ url: req.query.location });
-
-      // event情報を対象ロケーションの会議室予約のみにフィルタリング。
-      const targetEvents = await filter(events, async (event) => {
-        if (event.locations.length === 0) {
-          return false;
-        }
-        return await some(event.locations, async (eventLocation) => {
-          if (!eventLocation.hasOwnProperty("locationUri")) {
-            return false;
-          }
-          const room = await Room.findOne({
-            email: eventLocation.locationUri,
-            location: location.id,
-          });
-          return !!room;
-        });
-      });
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(targetEvents, async (event) => {
+      const result = await map(events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
           req.session.user.email
         );
       });
 
-      return res.json(result.filter((v) => v));
+      return res.json(result);
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
@@ -274,23 +250,30 @@ module.exports = {
         }
       );
 
-      // graphAPIからevent取得
-      const events = await MSGraph.getCalendarEvents(
+      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+      const events = await sails.helpers.getTargetFromEvents(
         accessToken,
         req.session.user.email,
-        {
-          startDateTime: moment(startTimestamp).format(),
-          endDateTime: moment(endTimestamp).format(),
-          $orderBy: "start/dateTime",
-        }
+        startTimestamp,
+        endTimestamp,
+        req.query.location
       );
-      return res.json({ schedules: schedules, events: events });
+
+      // GraphAPIのevent情報とVisitor情報をマージ
+      const result = await map(events, async (event) => {
+        return await sails.helpers.attachVisitorData(
+          event,
+          req.session.user.email
+        );
+      });
+
+      return res.json({ schedules: schedules, events: result });
 
       // TODO:画面作成時にどちらが良いかに考えること！！
       // これを使うなら、locations[0]になっているので複数会議室に対応させること
       //
       // 空き時間情報の配列の中に、該当イベントの情報も一緒にセット
-      // const targetEvents = schedules.map((schedule) => {
+      // const result = schedules.map((schedule) => {
       //   const isSameRoom = (event) => {
       //     if (
       //       event.locations.length === 0 ||
@@ -298,11 +281,14 @@ module.exports = {
       //     ) {
       //       return false;
       //     }
-      //     return event.locations[0].locationUri === schedule.scheduleId;
+      //     return event.locations[0s].locationUri === schedule.scheduleId;
       //   };
-      //   return { ...schedule, event: events[events.findIndex(isSameRoom)] };
+      //   return {
+      //     ...schedule,
+      //     event: targetEvents[targetEvents.findIndex(isSameRoom)],
+      //   };
       // });
-      // return res.json(targetEvents);
+      // return res.json(result);
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
