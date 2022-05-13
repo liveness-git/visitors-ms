@@ -294,7 +294,9 @@ module.exports = {
           eventsIndex: events.reduce((result, event, index) => {
             if (
               Object.keys(event.resourcies).some(
-                (key) => event.resourcies[key].roomEmail === schedule.scheduleId
+                (key) =>
+                  event.resourcies[key].roomEmail === schedule.scheduleId &&
+                  event.resourcies[key].roomStatus === "accepted"
               )
             ) {
               result.push(index);
