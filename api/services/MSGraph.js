@@ -43,7 +43,7 @@ module.exports = {
   ) => {
     const schedules = await MSGraph.getSchedule(accessToken, email, {
       startTime: {
-        dateTime: MSGraph.getGraphDateTime(startTimestamp + 1000), // 同時刻終了の予定があった場合、予約可能対象外になるので1ms進めて検索
+        dateTime: MSGraph.getGraphDateTime(startTimestamp + 1000), // 同時刻終了の予定があった場合、予約可能対象外になるので1sec進めて検索
         timeZone: MSGraph.getTimeZone(),
       },
       endTime: {

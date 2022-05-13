@@ -33,6 +33,12 @@ module.exports = {
       description: "ロケーションurl名",
       required: true,
     },
+    roomType: {
+      type: "string",
+      description:
+        "対象会議室のタイプを絞り込む必要がある場合のみ指定します（rooms または free）",
+      required: false,
+    },
   },
 
   fn: async function (inputs, exits) {
@@ -66,7 +72,11 @@ module.exports = {
           email: eventLocation.locationUri,
           location: location.id,
         });
-        return !!room;
+        if (!!inputs.roomType) {
+          return !!room && room.type === inputs.roomType; // 会議室タイプの指定
+        } else {
+          return !!room;
+        }
       });
     });
     return exits.success(result);

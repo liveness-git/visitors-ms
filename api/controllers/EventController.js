@@ -220,8 +220,16 @@ module.exports = {
       // ロケーションの取得
       const location = await Location.findOne({ url: req.query.location });
 
-      //会議室の取得
-      const rooms = await Room.find({ location: location.id }).sort("sort ASC");
+      // 会議室の取得
+      const rooms = await Room.find({
+        location: location.id,
+        type: req.query.type,
+      }).sort("sort ASC");
+
+      // 該当会議室がない場合(roomのtype指定があるので可能性あり)
+      if (rooms.length === 0) {
+        return res.json({ schedules: [], events: [] });
+      }
 
       // 取得期間の設定
       const timestamp = Number(req.query.timestamp);
@@ -234,7 +242,7 @@ module.exports = {
       );
 
       // graphAPIから空き時間情報
-      const schedules = await MSGraph.getSchedule(
+      const $schedules = await MSGraph.getSchedule(
         accessToken,
         req.session.user.email,
         {
@@ -251,44 +259,52 @@ module.exports = {
       );
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-      const events = await sails.helpers.getTargetFromEvents(
+      const $events = await sails.helpers.getTargetFromEvents(
         accessToken,
         req.session.user.email,
         startTimestamp,
         endTimestamp,
-        req.query.location
+        req.query.location,
+        req.query.type
       );
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(events, async (event) => {
+      const events = await map($events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
           req.session.user.email
         );
       });
 
-      return res.json({ schedules: schedules, events: result });
+      // 空き時間情報の再構成
+      const schedules = $schedules.map((schedule) => {
+        const room = rooms.find((room) => room.email === schedule.scheduleId);
+        return {
+          roomId: room.id,
+          roomName: room.name,
+          roomEmail: room.email,
+          scheduleItems: schedule.scheduleItems.map((item) => {
+            return {
+              status: item.status,
+              start: MSGraph.getTimestamp(item.start.dateTime),
+              end: MSGraph.getTimestamp(item.end.dateTime),
+            };
+          }),
+          // 該当会議室のイベント配列Indexを保持する
+          eventsIndex: events.reduce((result, event, index) => {
+            if (
+              Object.keys(event.resourcies).some(
+                (key) => event.resourcies[key].roomEmail === schedule.scheduleId
+              )
+            ) {
+              result.push(index);
+            }
+            return result;
+          }, []),
+        };
+      });
 
-      // TODO:画面作成時にどちらが良いかに考えること！！
-      // これを使うなら、locations[0]になっているので複数会議室に対応させること
-      //
-      // 空き時間情報の配列の中に、該当イベントの情報も一緒にセット
-      // const result = schedules.map((schedule) => {
-      //   const isSameRoom = (event) => {
-      //     if (
-      //       event.locations.length === 0 ||
-      //       !event.locations[0].hasOwnProperty("locationUri")
-      //     ) {
-      //       return false;
-      //     }
-      //     return event.locations[0s].locationUri === schedule.scheduleId;
-      //   };
-      //   return {
-      //     ...schedule,
-      //     event: targetEvents[targetEvents.findIndex(isSameRoom)],
-      //   };
-      // });
-      // return res.json(result);
+      return res.json({ schedules: schedules, events: events });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
