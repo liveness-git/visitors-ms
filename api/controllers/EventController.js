@@ -32,6 +32,16 @@ module.exports = {
         return res.json({ success: false, errors: errors });
       }
 
+      // 空き時間チェック
+      const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
+        accessToken,
+        req.session.user.email,
+        event
+      );
+      if (!isAvailable) {
+        return res.json({ success: false, errors: errAvailable });
+      }
+
       // graphAPIからevent登録
       const $ = await MSGraph.postEvent(
         accessToken,
@@ -97,6 +107,60 @@ module.exports = {
       );
       if (!$) {
         throw new Error("Could not obtain MSGraph Event to update.");
+      }
+
+      // 空き時間チェック(予約時間が変更されている場合のみ)
+      if (!!dirtyFields.startTime || !!dirtyFields.endTime) {
+        // 変更前情報
+        const beforeStart = MSGraph.getTimestamp($.start.dateTime);
+        const beforeEnd = MSGraph.getTimestamp($.end.dateTime);
+        // 変更後情報
+        const afterStart = new Date(updateEvent.start.dateTime).getTime();
+        const afterEnd = new Date(updateEvent.end.dateTime).getTime();
+
+        // 変更前後で時間の重複がある場合
+        if (beforeStart < afterEnd && beforeEnd > afterStart) {
+          // 開始時刻が繰り上がっている場合
+          if (beforeStart > afterStart) {
+            // 開始時刻の差分をチェック
+            const [isAvailable1, errAvailable1] =
+              await MSGraph.isAvailableRooms(
+                accessToken,
+                req.session.user.email,
+                updateEvent,
+                afterStart,
+                beforeStart
+              );
+            if (!isAvailable1) {
+              return res.json({ success: false, errors: errAvailable1 });
+            }
+          }
+          // 終了時刻が延長している場合
+          if (beforeEnd < afterEnd) {
+            // 終了時刻の差分をチェック
+            const [isAvailable2, errAvailable2] =
+              await MSGraph.isAvailableRooms(
+                accessToken,
+                req.session.user.email,
+                updateEvent,
+                beforeEnd,
+                afterEnd
+              );
+            if (!isAvailable2) {
+              return res.json({ success: false, errors: errAvailable2 });
+            }
+          }
+        } else {
+          // 通常の空き時間チェック
+          const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
+            accessToken,
+            req.session.user.email,
+            updateEvent
+          );
+          if (!isAvailable) {
+            return res.json({ success: false, errors: errAvailable });
+          }
+        }
       }
 
       // eventの更新

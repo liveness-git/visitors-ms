@@ -192,24 +192,6 @@ module.exports = {
 
     // エラーチェック------
     const errors = {};
-
-    if (data.mode !== "upd") {
-      //TODO: 更新時、空き会議室検索は未対応
-      // graphAPIから空き会議室を取得
-      const available = await MSGraph.getAvailableRooms(
-        accessToken,
-        authorEmail,
-        startTimestamp,
-        endTimestamp,
-        [room.email]
-      );
-      if (available.length === 0) {
-        const dateErrCode = "visitdialog.form.error.available-time";
-        errors.startTime = [dateErrCode];
-        errors.endTime = [dateErrCode];
-      }
-    }
-
     if (!!Object.keys(errors).length) {
       return [{}, errors];
     }
@@ -283,6 +265,43 @@ module.exports = {
       }
     });
     return result;
+  },
+
+  // 指定した予約の会議室が空いているかチェック
+  isAvailableRooms: async (
+    accessToken,
+    email,
+    event,
+    startDiff = null,
+    endDiff = null
+  ) => {
+    const errors = {};
+    const startTimestamp = new Date(event.start.dateTime).getTime();
+    const endTimestamp = new Date(event.end.dateTime).getTime();
+    const rooms = event.attendees.filter(($) => $.type === "resource");
+
+    const start = startDiff ? startDiff : startTimestamp;
+    const end = endDiff ? endDiff : endTimestamp;
+
+    // graphAPIから空き会議室を取得
+    const available = await MSGraph.getAvailableRooms(
+      accessToken,
+      email,
+      start,
+      end,
+      [rooms[0].emailAddress.address] // TODO:複数会議室未対応
+    );
+
+    if (available.length === rooms.length) {
+      return [true, errors]; //result OK
+    } else {
+      // TODO:複数会議室未対応
+      // (どの会議室がNGだったか返していない。available配列を調べればOK)
+      const dateErrCode = "visitdialog.form.error.available-time";
+      errors.startTime = [dateErrCode];
+      errors.endTime = [dateErrCode];
+      return [false, errors]; //result NG
+    }
   },
 
   getTimeZone: () => sails.config.visitors.timezone || "Asia/Tokyo",
