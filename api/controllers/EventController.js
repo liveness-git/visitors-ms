@@ -305,7 +305,7 @@ module.exports = {
         req.session.user.localAccountId
       );
 
-      // graphAPIから空き時間情報
+      // graphAPIから各会議室の利用情報を取得
       const $schedules = await MSGraph.getSchedule(
         accessToken,
         req.session.user.email,
@@ -319,6 +319,7 @@ module.exports = {
             timeZone: MSGraph.getTimeZone(),
           },
           schedules: rooms.map((room) => room.email),
+          $select: "scheduleId,scheduleItems",
         }
       );
 
@@ -340,7 +341,7 @@ module.exports = {
         );
       });
 
-      // 空き時間情報の再構成
+      // 各会議室の利用情報を再構成
       const schedules = $schedules.map((schedule) => {
         const room = rooms.find((room) => room.email === schedule.scheduleId);
         return {

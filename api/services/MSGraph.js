@@ -33,29 +33,31 @@ module.exports = {
     return result.data.value;
   },
 
-  // roomsに渡した配列から予約可能な会議室のみに絞り込んで返す
+  // 引数のroomEmail配列から予約可能なemailのみに絞り込んで返す
   getAvailableRooms: async (
     accessToken,
     email,
     startTimestamp,
     endTimestamp,
-    rooms
+    roomEmails
   ) => {
     const schedules = await MSGraph.getSchedule(accessToken, email, {
       startTime: {
-        dateTime: MSGraph.getGraphDateTime(startTimestamp + 1000), // 同時刻終了の予定があった場合、予約可能対象外になるので1sec進めて検索
+        dateTime: MSGraph.getGraphDateTime(startTimestamp),
         timeZone: MSGraph.getTimeZone(),
       },
       endTime: {
         dateTime: MSGraph.getGraphDateTime(endTimestamp),
         timeZone: MSGraph.getTimeZone(),
       },
-      schedules: rooms,
+      schedules: roomEmails,
       availabilityViewInterval: "5", //TODO: Interval config化？
+      $select: "scheduleId,availabilityView",
     });
-    return rooms.filter((room) => {
-      const schedule = schedules.filter((sc) => sc.scheduleId === room);
-      return schedule[0].scheduleItems.length === 0;
+    return roomEmails.filter((email) => {
+      const schedule = schedules.find((sc) => sc.scheduleId === email);
+      const viewArray = schedule.availabilityView.match(/.{1}/g);
+      return viewArray.every(($) => $ === "0");
     });
   },
 
