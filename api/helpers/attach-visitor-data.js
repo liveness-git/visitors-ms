@@ -27,6 +27,10 @@ module.exports = {
 
     const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
 
+    const author = sails.config.visitors.isOwnerMode
+      ? { ...event.attendees[0] }
+      : { ...event.organizer };
+
     const result = {
       iCalUId: event.iCalUId,
       subject: event.subject,
@@ -35,9 +39,8 @@ module.exports = {
       endDateTime: MSGraph.getTimestamp(event.end.dateTime),
       roomName: event.location.displayName, //表での表示用
       roomStatus: locations[first].status, // 表での表示用
-      reservationName: event.organizer.emailAddress.name,
-      isAuthor: event.organizer.emailAddress.address === inputs.email,
-      // isAuthor:event.isOrganizer,// TODO:代理人が所有者の代わりにイベントを主催した場合にも適用される。どちらが正解？
+      reservationName: author.emailAddress.name,
+      isAuthor: author.emailAddress.address === inputs.email,
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
       visitCompany: "",
@@ -46,7 +49,9 @@ module.exports = {
         (newObj, user) => {
           if (
             user.type !== "resource " &&
-            user.emailAddress.address !== event.organizer.emailAddress.address
+            user.emailAddress.address !== author.emailAddress.address &&
+            user.emailAddress.address !==
+              sails.config.visitors.credential.username
           ) {
             if (_.isArray(newObj[user.type])) {
               newObj[user.type].push({ ...user.emailAddress });

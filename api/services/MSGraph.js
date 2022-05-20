@@ -68,6 +68,8 @@ module.exports = {
       startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
       $orderBy: "start/dateTime",
+      $select:
+        "start,end,iCalUId,subject,categories,organizer,location,locations,attendees",
     }
   ) => {
     return MSGraph.requestCalendarView(accessToken, email, conditions);
@@ -183,7 +185,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, accessToken, authorEmail) => {
+  generateEventData: async (data, authorEmail) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -209,8 +211,22 @@ module.exports = {
       return newObj;
     }, {});
 
+    // TODO: 一般IDで登録後にフロントから変更かけれる？その場合この値はどうなるか。attendessのdirtyField=true状態で要確認
+    const firstEmail = sails.config.visitors.isOwnerMode
+      ? authorEmail // Visitors予約者
+      : sails.config.visitors.credential.username; // Visitors管理者;
+
+    let bodyHtml = `<br/>\r\n<div>\r\n`;
+    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
+    bodyHtml += `</div>\r\n`;
+
     const event = {
       subject: data.subject,
+      categories: [MSGraph.getCategoriesLabel(authorEmail)], // Visitors予約者をカテゴリにセットする
+      body: {
+        contentType: "html",
+        content: `<html>\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n</head>\r\n<body>\r\n${bodyHtml}</body>\r\n</html>\r\n`,
+      },
       start: {
         dateTime: MSGraph.getGraphDateTime(startTimestamp),
         timeZone: MSGraph.getTimeZone(),
@@ -226,7 +242,7 @@ module.exports = {
       },
       attendees: [
         {
-          emailAddress: { address: authorEmail }, // TODO: フロントユーザーが後から変更かけた場合、この値が変更される可能性あり。要調査
+          emailAddress: { address: firstEmail },
           type: "required",
         },
         {
@@ -317,6 +333,8 @@ module.exports = {
 
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
+
+  getCategoriesLabel: (email) => `Visitors:Created by ${email}.`,
 
   // イベントのLocationから会議室のみを抽出=> 必要情報を纏めて再定義
   reduceLocations: async (event) => {

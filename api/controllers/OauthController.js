@@ -44,12 +44,16 @@ module.exports = {
       //トークンエンドポイントに認可コードを提示。
       cca
         .acquireTokenByCode(tokenRequest)
-        .then((response) => {
+        .then(async (response) => {
           req.session.user = {
             email: response.account.username,
             name: response.account.name,
             localAccountId: response.account.localAccountId,
           };
+          // 代表アカウントも同時に設定
+          const localAccountId = await MSAuth.acquireOwnerAccountId();
+          req.session.owner = { localAccountId: localAccountId };
+
           return res.json({ ok: true });
         })
         .catch((error) => {

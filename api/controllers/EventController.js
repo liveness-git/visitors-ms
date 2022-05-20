@@ -10,20 +10,17 @@ const MSGraph = require("../services/MSGraph");
 const moment = require("moment-timezone");
 const { map } = require("p-iteration");
 
+const isOwnerMode = sails.config.visitors.isOwnerMode;
+const ownerEmail = sails.config.visitors.credential.username;
+
 module.exports = {
   create: async (req, res) => {
     try {
       const data = req.body.inputs;
 
-      // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
-
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(
         data,
-        accessToken,
         req.session.user.email
       );
 
@@ -31,6 +28,15 @@ module.exports = {
       if (!!Object.keys(errors).length) {
         return res.json({ success: false, errors: errors });
       }
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
 
       // 空き時間チェック
       const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
@@ -44,8 +50,8 @@ module.exports = {
 
       // graphAPIからevent登録
       const $ = await MSGraph.postEvent(
-        accessToken,
-        req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         event
       );
 
@@ -78,15 +84,9 @@ module.exports = {
       const data = req.body.inputs;
       const visitorId = data.visitorId;
 
-      // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
-
       // event情報をgraphAPIに渡せるように成型
       const [updateEvent, errors] = await MSGraph.generateEventData(
         data,
-        accessToken,
         req.session.user.email
       );
 
@@ -97,12 +97,21 @@ module.exports = {
 
       // 更新分フィールドのみ抽出
       const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
-      console.log("変更分抽出：", params);
+      console.log("変更分抽出：", params); //TODO:debug
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
 
       // iCalUIdからevent取得
       const $ = await MSGraph.getEventByIcaluid(
-        accessToken,
-        req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         data.iCalUId
       );
       if (!$) {
@@ -165,8 +174,8 @@ module.exports = {
 
       // eventの更新
       const event = MSGraph.patchEvent(
-        accessToken,
-        req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         $.id,
         params
       );
@@ -209,10 +218,15 @@ module.exports = {
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
+
       // iCalUIdからevent取得
       const $ = await MSGraph.getEventByIcaluid(
-        accessToken,
-        req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         data.iCalUId
       );
       if (!$) {
@@ -220,8 +234,8 @@ module.exports = {
       }
       // eventの削除
       const event = MSGraph.deleteEvent(
-        accessToken,
-        req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         $.id
       );
       if (!event) {
@@ -254,11 +268,16 @@ module.exports = {
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const events = await sails.helpers.getTargetFromEvents(
-        accessToken,
         req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
         req.query.location
@@ -304,6 +323,10 @@ module.exports = {
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
       );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
 
       // graphAPIから各会議室の利用情報を取得
       const $schedules = await MSGraph.getSchedule(
@@ -325,8 +348,9 @@ module.exports = {
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
-        accessToken,
         req.session.user.email,
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
         req.query.location,

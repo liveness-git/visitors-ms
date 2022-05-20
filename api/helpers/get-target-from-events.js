@@ -8,9 +8,14 @@ module.exports = {
     "graphAPIからevent取得し、対象ロケーションの会議室予約のみにフィルタリングします",
 
   inputs: {
+    loginEmail: {
+      type: "string",
+      description: "ログインのメールアドレス",
+      required: true,
+    },
     accessToken: {
       type: "string",
-      description: "ログインユーザーのアクセストークン",
+      description: "GraphAPIに問い合わせる時のアクセストークン",
       required: true,
     },
     email: {
@@ -42,6 +47,13 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
+    // 代表アカウント登録の場合はfilterの条件を追加
+    const addFilter = sails.config.visitors.isOwnerMode
+      ? ` and categories/any(c:c eq '${MSGraph.getCategoriesLabel(
+          inputs.loginEmail
+        )}')`
+      : ``;
+
     // graphAPIからevent取得
     const events = await MSGraph.getCalendarEvents(
       inputs.accessToken,
@@ -49,10 +61,10 @@ module.exports = {
       {
         startDateTime: moment(inputs.startTimestamp).format(),
         endDateTime: moment(inputs.endTimestamp).format(),
-        $filter: "isCancelled eq false",
-        $orderBy: "start/dateTime",
-        $select:
-          "start,end,iCalUId,subject,organizer,location,locations,attendees",
+        // $filter: "isCancelled eq false" + addFilter,//TODO: あとで復活＋テスト
+        $filter: `categories/any(c:c eq '${MSGraph.getCategoriesLabel(
+          inputs.loginEmail
+        )}')`,
       }
     );
 
@@ -62,6 +74,14 @@ module.exports = {
     // event情報を対象ロケーションの会議室予約のみにフィルタリング。
     const result = await filter(events, async (event) => {
       if (event.locations.length === 0) {
+        return false;
+      }
+      if (
+        // 一般アカウント登録の場合、自身が参加者の予定を対象外にする。
+        // (addFilterだとoutlookから登録したものまで対象外になるのでこのタイミングで処理する)
+        !sails.config.visitors.isOwnerMode &&
+        event.organizer.emailAddress.address !== inputs.loginEmail
+      ) {
         return false;
       }
       return await some(event.locations, async (eventLocation) => {
