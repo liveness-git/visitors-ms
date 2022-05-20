@@ -28,7 +28,7 @@ module.exports = {
     const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
 
     const author = sails.config.visitors.isOwnerMode
-      ? { ...event.attendees[0] }
+      ? { ...event.attendees[1] }
       : { ...event.organizer };
 
     const result = {

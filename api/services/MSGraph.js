@@ -185,7 +185,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, authorEmail) => {
+  generateEventData: async (data, loginEmail) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -213,16 +213,16 @@ module.exports = {
 
     // TODO: 一般IDで登録後にフロントから変更かけれる？その場合この値はどうなるか。attendessのdirtyField=true状態で要確認
     const firstEmail = sails.config.visitors.isOwnerMode
-      ? authorEmail // Visitors予約者
+      ? loginEmail // Visitors予約者
       : sails.config.visitors.credential.username; // Visitors管理者;
 
     let bodyHtml = `<br/>\r\n<div>\r\n`;
-    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
+    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${loginEmail}&gt;さんから予約されました。`;
     bodyHtml += `</div>\r\n`;
 
     const event = {
       subject: data.subject,
-      categories: [MSGraph.getCategoriesLabel(authorEmail)], // Visitors予約者をカテゴリにセットする
+      categories: [MSGraph.getCategoriesLabel(loginEmail)], // Visitors予約者をカテゴリにセットする
       body: {
         contentType: "html",
         content: `<html>\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n</head>\r\n<body>\r\n${bodyHtml}</body>\r\n</html>\r\n`,
