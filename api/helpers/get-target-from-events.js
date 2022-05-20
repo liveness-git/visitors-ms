@@ -8,6 +8,11 @@ module.exports = {
     "graphAPIからevent取得し、対象ロケーションの会議室予約のみにフィルタリングします",
 
   inputs: {
+    catgoryFilter: {
+      type: "string",
+      description: "categoriesを絞り込む際のワード",
+      required: true,
+    },
     accessToken: {
       type: "string",
       description: "GraphAPIに問い合わせる時のアクセストークン",
@@ -42,6 +47,16 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
+    // filterの設定
+    // let catgoryFilter = "isCancelled eq false";
+    // if (inputs.catgoryFilter) {
+    //   // catgoryFilter += ` and categories/any(c:startsWith(c,'${inputs.catgoryFilter}'))`; // anyからのstartsWith系はサポートされていないっぽい
+    //   catgoryFilter += ` and categories/any(c:c eq '${inputs.catgoryFilter}')`;
+    // }
+    // ↑ and で繋ぐとGraphAPI側で500エラーになる。各々単体なら動く。バグっぽい？
+    // とりあえずカテゴリのみfilter＋取得後に絞り込む方法で回避。
+    const catgoryFilter = `categories/any(c:c eq '${inputs.catgoryFilter}')`;
+
     // graphAPIからevent取得
     const events = await MSGraph.getCalendarEvents(
       inputs.accessToken,
@@ -49,7 +64,7 @@ module.exports = {
       {
         startDateTime: moment(inputs.startTimestamp).format(),
         endDateTime: moment(inputs.endTimestamp).format(),
-        $filter: "isCancelled eq false",
+        $filter: catgoryFilter,
       }
     );
 
@@ -58,6 +73,10 @@ module.exports = {
 
     // event情報を対象ロケーションの会議室予約のみにフィルタリング。
     const result = await filter(events, async (event) => {
+      // $filterで絞り込めなくなったのでココで回避。
+      if (event.isCancelled) {
+        return false;
+      }
       if (event.locations.length === 0) {
         return false;
       }

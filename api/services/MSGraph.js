@@ -2,9 +2,11 @@ const moment = require("moment-timezone");
 const { reduce } = require("p-iteration");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
+const categoryTitle = "Visitors:";
 
 module.exports = {
   baseUrl,
+  categoryTitle,
   getEventByIcaluid: async (accessToken, email, iCalUId) => {
     const path = "events";
     const options = {
@@ -222,7 +224,7 @@ module.exports = {
 
     const event = {
       subject: data.subject,
-      categories: [MSGraph.getCategoriesLabel(loginEmail)], // Visitors予約者をカテゴリにセットする
+      categories: [categoryTitle, MSGraph.getCategoriesLabel(loginEmail)], // Visitors予約者をカテゴリにセットする
       body: {
         contentType: "html",
         content: `<html>\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n</head>\r\n<body>\r\n${bodyHtml}</body>\r\n</html>\r\n`,
@@ -334,7 +336,7 @@ module.exports = {
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
-  getCategoriesLabel: (email) => `Visitors:Created by ${email}.`,
+  getCategoriesLabel: (email) => `${categoryTitle}Created by ${email}.`,
 
   // イベントのLocationから会議室のみを抽出=> 必要情報を纏めて再定義
   reduceLocations: async (event) => {
