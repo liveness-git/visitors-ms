@@ -11,7 +11,7 @@ module.exports = {
     catgoryFilter: {
       type: "string",
       description: "categoriesを絞り込む際のワード",
-      required: true,
+      required: false,
     },
     accessToken: {
       type: "string",
@@ -47,25 +47,29 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
+    const conditions = {
+      startDateTime: moment(inputs.startTimestamp).format(),
+      endDateTime: moment(inputs.endTimestamp).format(),
+    };
     // filterの設定
-    const catgoryFilter = `categories/any(c:c eq '${inputs.catgoryFilter}')`;
+    if (inputs.catgoryFilter) {
+      conditions[
+        "$filter"
+      ] = `categories/any(c:c eq '${inputs.catgoryFilter}')`;
+    }
 
     // graphAPIからevent取得
     const events = await MSGraph.getCalendarEvents(
       inputs.accessToken,
       inputs.email,
-      {
-        startDateTime: moment(inputs.startTimestamp).format(),
-        endDateTime: moment(inputs.endTimestamp).format(),
-        $filter: catgoryFilter,
-      }
+      conditions
     );
 
     // ロケーションの取得
     const location = await Location.findOne({ url: inputs.location });
 
     // event情報を対象ロケーションの会議室予約のみにフィルタリング。
-    const result = await filter(events, async (event) => {。
+    const result = await filter(events, async (event) => {
       if (event.isCancelled) {
         return false;
       }

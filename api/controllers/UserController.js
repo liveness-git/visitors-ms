@@ -39,14 +39,28 @@ module.exports = {
         params: params,
       });
       const contacts = $.data.value;
-      const result = contacts.map((user) => {
-        const name = user.displayName;
-        const address = user.mail;
-        return {
-          name: name,
-          address: address,
-        };
-      });
+
+      // 会議室情報を取得
+      const rooms = await Room.find();
+
+      const result = contacts
+        .map((user) => {
+          const name = user.displayName;
+          const address = user.mail;
+          if (
+            // ログインユーザー/代表アカウント/会議室は表示対象外
+            address === req.session.user.email ||
+            address === sails.config.visitors.credential.username ||
+            rooms.find((room) => room.email === address)
+          ) {
+            return;
+          }
+          return {
+            name: name,
+            address: address,
+          };
+        })
+        .filter((v) => v);
 
       return res.json(result);
     } catch (err) {

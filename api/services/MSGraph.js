@@ -218,13 +218,17 @@ module.exports = {
       ? loginEmail // Visitors予約者
       : sails.config.visitors.credential.username; // Visitors管理者;
 
+    const categories = sails.config.visitors.isOwnerMode
+      ? [categoryTitle, MSGraph.getCategoriesLabel(loginEmail)] // Visitors予約者をカテゴリにセットする
+      : [];
+
     let bodyHtml = `<br/>\r\n<div>\r\n`;
     bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${loginEmail}&gt;さんから予約されました。`;
     bodyHtml += `</div>\r\n`;
 
     const event = {
       subject: data.subject,
-      categories: [categoryTitle, MSGraph.getCategoriesLabel(loginEmail)], // Visitors予約者をカテゴリにセットする
+      categories: categories,
       body: {
         contentType: "html",
         content: `<html>\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n</head>\r\n<body>\r\n${bodyHtml}</body>\r\n</html>\r\n`,
