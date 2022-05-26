@@ -2,11 +2,10 @@ const moment = require("moment-timezone");
 const { reduce } = require("p-iteration");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
-const categoryTitle = "Visitors:";
+const labelTitle = "Visitors:";
 
 module.exports = {
   baseUrl,
-  categoryTitle,
   getEventByIcaluid: async (accessToken, email, iCalUId) => {
     const path = "events";
     const options = {
@@ -219,7 +218,10 @@ module.exports = {
       : sails.config.visitors.credential.username; // Visitors管理者;
 
     const categories = sails.config.visitors.isOwnerMode
-      ? [categoryTitle, MSGraph.getCategoriesLabel(loginEmail)] // Visitors予約者をカテゴリにセットする
+      ? [
+          MSGraph.getCategoryLabel(room.category), // カテゴリIDをセット
+          MSGraph.getAuthorLabel(loginEmail), // 予約者をセット
+        ]
       : [];
 
     let bodyHtml = `<br/>\r\n<div>\r\n`;
@@ -340,7 +342,8 @@ module.exports = {
   getTimeFormat: (str) =>
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
-  getCategoriesLabel: (email) => `${categoryTitle}Created by ${email}.`,
+  getCategoryLabel: (id) => `${labelTitle}${id}.`,
+  getAuthorLabel: (email) => `${labelTitle}Created by ${email}.`,
 
   // イベントのLocationから会議室のみを抽出=> 必要情報を纏めて再定義
   reduceLocations: async (event) => {

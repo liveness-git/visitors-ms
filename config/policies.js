@@ -32,4 +32,7 @@ module.exports.policies = {
   LocationController: {
     "*": "isMsSignedIn",
   },
+  CategoryController: {
+    "*": "isMsSignedIn",
+  },
 };

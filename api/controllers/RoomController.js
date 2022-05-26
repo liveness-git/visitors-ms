@@ -7,6 +7,7 @@
 
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
+const { filter } = require("p-iteration");
 
 module.exports = {
   list: async (req, res) => {
@@ -20,7 +21,16 @@ module.exports = {
   choices: async (req, res) => {
     try {
       const location = await Location.findOne({ url: req.query.location });
-      const rooms = await Room.find({ location: location.id }).sort("sort ASC");
+      const $rooms = await Room.find({ location: location.id }).sort(
+        "sort ASC"
+      );
+      const rooms = await filter($rooms, async (room) => {
+        const category = await Category.findOne(room.category);
+        return (
+          category.members === null ||
+          category.members.some((email) => email === req.session.user.email)
+        );
+      });
 
       if (!req.query.start || !req.query.end) {
         return res.json(rooms);

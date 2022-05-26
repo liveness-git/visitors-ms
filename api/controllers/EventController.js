@@ -275,7 +275,7 @@ module.exports = {
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getCategoriesLabel(req.session.user.email) : "",
+        isOwnerMode ? MSGraph.getAuthorLabel(req.session.user.email) : "",
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
@@ -306,7 +306,7 @@ module.exports = {
       // 会議室の取得
       const rooms = await Room.find({
         location: location.id,
-        type: req.query.type,
+        category: req.query.category,
       }).sort("sort ASC");
 
       // 該当会議室がない場合(roomのtype指定があるので可能性あり)
@@ -348,7 +348,7 @@ module.exports = {
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.categoryTitle : "",
+        isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
