@@ -33,11 +33,10 @@ module.exports.routes = {
    *                                                                          *
    ***************************************************************************/
   // frontend
-  "GET /front/login": resolver,
-  "GET /front": resolver,
   "GET /:location?/login": resolver,
   "GET /:location/main/byroom": resolver,
   "GET /:location/main": resolver,
+  "GET /:location/front": resolver,
   // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,
