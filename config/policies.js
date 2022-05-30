@@ -18,21 +18,24 @@ module.exports.policies = {
 
   // '*': true,
   UserController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
   },
   RoomController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
   },
   EventController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
   },
   VisitorController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
   },
   LocationController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
   },
   CategoryController: {
-    "*": "isMsSignedIn",
+    "*": "isUserSignedIn",
+  },
+  FrontController: {
+    "*": "isFrontUser",
   },
 };

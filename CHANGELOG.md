@@ -1,5 +1,10 @@
 # visitors-ms
 
+## 0.0.0.46-2022-05-30
+
+-フロントデータの取得
+-FrontController の policies 設定
+
 ## 0.0.0.45-2022-05-30
 
 - Role 作成（admin,front）
