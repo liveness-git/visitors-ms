@@ -45,11 +45,26 @@ module.exports = {
       cca
         .acquireTokenByCode(tokenRequest)
         .then(async (response) => {
+          const admin = await Role.findOne({ name: "admin" });
+          const front = await Role.findOne({ name: "front" });
+
+          // ユーザーのセッション情報をセット
           req.session.user = {
             email: response.account.username,
             name: response.account.name,
+            isAdmin:
+              !!admin &&
+              admin.members.some(
+                (email) => email === response.account.username
+              ),
+            isFront:
+              !!front &&
+              front.members.some(
+                (email) => email === response.account.username
+              ),
             localAccountId: response.account.localAccountId,
           };
+
           // 代表アカウントも同時に設定
           const localAccountId = await MSAuth.acquireOwnerAccountId();
           req.session.owner = { localAccountId: localAccountId };
