@@ -17,9 +17,18 @@ module.exports = {
   checkin: async (req, res) => {
     try {
       const data = req.body.inputs;
-      const visitorId = data.visitorId;
+      const visitorId = data.id;
 
-      return res.json({ success: true });
+      const visitor = await Visitor.updateOne(visitorId).set({
+        checkIn: data.checkIn,
+        visitorCardNumber: data.visitorCardNumber,
+      });
+
+      if (!!visitor) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The update process failed.");
+      }
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
@@ -29,9 +38,18 @@ module.exports = {
   checkout: async (req, res) => {
     try {
       const data = req.body.inputs;
-      const visitorId = data.visitorId;
+      const visitorId = data.id;
 
-      return res.json({ success: true });
+      const visitor = await Visitor.updateOne(visitorId).set({
+        checkOut: data.checkOut,
+        visitorCardNumber: data.visitorCardNumber,
+      });
+
+      if (!!visitor) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The update process failed.");
+      }
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });

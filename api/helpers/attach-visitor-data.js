@@ -96,6 +96,9 @@ module.exports = {
       });
       result.comment = visitor.comment;
       result.contactAddr = visitor.contactAddr;
+      result.checkIn = visitor.checkIn;
+      result.checkOut = visitor.checkOut;
+      result.visitorCardNumber = visitor.visitorCardNumber;
     }
     return exits.success(result);
   },

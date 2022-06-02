@@ -385,7 +385,7 @@ module.exports = {
               Object.keys(event.resourcies).some(
                 (key) =>
                   event.resourcies[key].roomEmail === schedule.scheduleId &&
-                  event.resourcies[key].roomStatus === "accepted"
+                  event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
               )
             ) {
               result.push(index);
