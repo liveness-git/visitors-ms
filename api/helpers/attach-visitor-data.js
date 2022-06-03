@@ -15,6 +15,11 @@ module.exports = {
       description: "ログインユーザーのメールアドレス",
       required: true,
     },
+    isFront: {
+      type: "boolean",
+      description: "ログインユーザーがフロントか否か",
+      required: true,
+    },
   },
 
   fn: async function (inputs, exits) {
@@ -40,7 +45,7 @@ module.exports = {
       roomName: event.location.displayName, //表での表示用
       roomStatus: locations[first].status, // 表での表示用
       reservationName: author.emailAddress.name,
-      isAuthor: author.emailAddress.address === inputs.email,
+      isAuthor: inputs.isFront | (author.emailAddress.address === inputs.email),
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
       visitCompany: "",

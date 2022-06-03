@@ -287,7 +287,8 @@ module.exports = {
       const result = await map(events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
-          req.session.user.email
+          req.session.user.email,
+          false
         );
       });
 
@@ -346,9 +347,13 @@ module.exports = {
         }
       );
 
+      const categoryLabel = req.session.user.isFront
+        ? MSGraph.getCategoryLabel(req.query.category)
+        : MSGraph.getAuthorLabel(req.session.user.email);
+
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
+        isOwnerMode ? categoryLabel : "",
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
@@ -361,7 +366,8 @@ module.exports = {
       const events = await map($events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
-          req.session.user.email
+          req.session.user.email,
+          req.session.user.isFront
         );
       });
 

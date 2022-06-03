@@ -61,7 +61,7 @@ module.exports = {
       // 取得期間の設定
       const timestamp = Number(req.query.timestamp);
       const startTimestamp = moment(timestamp).startOf("date");
-      const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
+      const endTimestamp = moment(timestamp).endOf("date");
 
       // msalから有効なaccessToken取得(代表)
       const ownerToken = await MSAuth.acquireToken(
@@ -87,7 +87,8 @@ module.exports = {
       const result = await map(events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
-          req.session.user.email
+          req.session.user.email,
+          true
         );
       });
 
