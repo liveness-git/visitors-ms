@@ -33,7 +33,7 @@ module.exports = {
     const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
 
     const author = sails.config.visitors.isOwnerMode
-      ? { ...event.attendees[0] }
+      ? { ...event.attendees[1] }
       : { ...event.organizer };
 
     const result = {
@@ -52,12 +52,21 @@ module.exports = {
       visitorName: "",
       mailto: event.attendees.reduce(
         (newObj, user) => {
-          if (
-            user.type !== "resource " &&
-            user.emailAddress.address !== author.emailAddress.address &&
-            user.emailAddress.address !==
-              sails.config.visitors.credential.username
+          if (user.type === "resource") {
+            // リソースは外す
+          } else if (
+            // 予約者はauthors[0]に移動
+            user.emailAddress.address === author.emailAddress.address
           ) {
+            newObj["authors"][0] = { ...user.emailAddress };
+          } else if (
+            // 代表アカウントはauthors[1]に移動
+            user.emailAddress.address ===
+            sails.config.visitors.credential.username
+          ) {
+            newObj["authors"][1] = { ...user.emailAddress };
+          } else {
+            // その他は通常どおりに移動
             if (_.isArray(newObj[user.type])) {
               newObj[user.type].push({ ...user.emailAddress });
             } else {
@@ -66,7 +75,7 @@ module.exports = {
           }
           return newObj;
         },
-        { required: [], optional: [] }
+        { authors: [], required: [], optional: [] }
       ),
       resourcies: Object.keys(locations).reduce((newObj, room) => {
         newObj[room] = {

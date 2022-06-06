@@ -50,8 +50,7 @@ module.exports = {
           const name = user.displayName;
           const address = user.mail;
           if (
-            // ログインユーザー/代表アカウント/会議室は表示対象外
-            address === req.session.user.email ||
+            // 代表アカウント/会議室は表示対象外
             address === sails.config.visitors.credential.username ||
             rooms.find((room) => room.email === address)
           ) {

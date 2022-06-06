@@ -87,8 +87,9 @@ module.exports = {
       // event情報をgraphAPIに渡せるように成型
       const [updateEvent, errors] = await MSGraph.generateEventData(
         data,
-        req.session.user.email
+        data.mailto.authors[0].address
       );
+      sails.log.debug(data.mailto.authors[0].address); //TODO:debug
 
       // 入力エラーの場合
       if (!!Object.keys(errors).length) {

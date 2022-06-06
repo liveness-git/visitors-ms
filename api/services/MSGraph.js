@@ -186,7 +186,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, loginEmail) => {
+  generateEventData: async (data, authorEmail) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -212,20 +212,20 @@ module.exports = {
       return newObj;
     }, {});
 
-    // TODO: 一般IDで登録後にフロントから変更かけれる？その場合この値はどうなるか。attendessのdirtyField=true状態で要確認
-    const firstEmail = sails.config.visitors.isOwnerMode
-      ? loginEmail // Visitors予約者
-      : sails.config.visitors.credential.username; // Visitors管理者;
+    // attendees[0] = organizer
+    const hiddenEmail = sails.config.visitors.isOwnerMode
+      ? [sails.config.visitors.credential.username, authorEmail] // [代表アカウント, 予約者]
+      : [authorEmail, sails.config.visitors.credential.username]; // [予約者, 代表アカウント]
 
     const categories = sails.config.visitors.isOwnerMode
       ? [
           MSGraph.getCategoryLabel(room.category), // カテゴリIDをセット
-          MSGraph.getAuthorLabel(loginEmail), // 予約者をセット
+          MSGraph.getAuthorLabel(authorEmail), // 予約者をセット
         ]
       : [];
 
     let bodyHtml = `<br/>\r\n<div>\r\n`;
-    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${loginEmail}&gt;さんから予約されました。`;
+    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
     bodyHtml += `</div>\r\n`;
 
     const event = {
@@ -250,7 +250,11 @@ module.exports = {
       },
       attendees: [
         {
-          emailAddress: { address: firstEmail },
+          emailAddress: { address: hiddenEmail[0] }, // organizer
+          type: "required",
+        },
+        {
+          emailAddress: { address: hiddenEmail[1] }, // isOwnerMode? 予約者 : 管理者
           type: "required",
         },
         {
