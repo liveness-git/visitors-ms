@@ -84,11 +84,18 @@ module.exports = {
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(events, async (event) => {
+      const $result = await map(events, async (event) => {
         return await sails.helpers.attachVisitorData(
           event,
           req.session.user.email,
           true
+        );
+      });
+
+      // 会議室status=accepted のみに絞り込む
+      const result = $result.filter((event) => {
+        return Object.keys(event.resourcies).some(
+          (key) => event.resourcies[key].roomStatus === "accepted"
         );
       });
 

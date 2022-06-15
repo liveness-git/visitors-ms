@@ -37,7 +37,10 @@ module.exports.routes = {
   "GET /:location/main/byroom": resolver,
   "GET /:location/main": resolver,
   "GET /:location/front": resolver,
-  "GET /:location/settings/*": resolver,
+  "GET /:location/settings/role": resolver,
+  "GET /:location/settings/room": resolver,
+  "GET /:location/settings/location": resolver,
+  "GET /:location/settings/category": resolver,
   // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,

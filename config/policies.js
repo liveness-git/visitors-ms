@@ -20,25 +20,26 @@ module.exports.policies = {
   UserController: {
     "*": "isUserSignedIn",
   },
-  RoleController: {
+  EventController: {
     "*": "isUserSignedIn",
+  },
+  VisitorController: {
+    "*": "isUserSignedIn",
+  },
+  FrontController: {
+    "*": "isFrontUser",
+  },
+  RoleController: {
     list: "isAdminUser",
     create: "isAdminUser",
     update: "isAdminUser",
     delete: "isAdminUser",
   },
   RoomController: {
-    "*": "isUserSignedIn",
     list: "isAdminUser",
     create: "isAdminUser",
     update: "isAdminUser",
     delete: "isAdminUser",
-  },
-  EventController: {
-    "*": "isUserSignedIn",
-  },
-  VisitorController: {
-    "*": "isUserSignedIn",
   },
   LocationController: {
     "*": "isUserSignedIn",
@@ -53,8 +54,5 @@ module.exports.policies = {
     create: "isAdminUser",
     update: "isAdminUser",
     delete: "isAdminUser",
-  },
-  FrontController: {
-    "*": "isFrontUser",
   },
 };

@@ -10,14 +10,6 @@ const MSGraph = require("../services/MSGraph");
 const { filter } = require("p-iteration");
 
 module.exports = {
-  list: async (req, res) => {
-    try {
-      return res.json("ok");
-    } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
-    }
-  },
   choices: async (req, res) => {
     try {
       const location = await Location.findOne({ url: req.query.location });
@@ -59,6 +51,69 @@ module.exports = {
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
+    }
+  },
+
+  list: async (req, res) => {
+    try {
+      const result = await Room.find().sort("createdAt ASC");
+      return res.json(result);
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ body: err.message });
+    }
+  },
+
+  create: async (req, res) => {
+    try {
+      const data = req.body.inputs;
+
+      const result = await Room.create(data).fetch();
+
+      if (!!result) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The update process failed.");
+      }
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ body: err.message });
+    }
+  },
+
+  update: async (req, res) => {
+    try {
+      const data = req.body.inputs;
+      const id = data.id;
+
+      const result = await Room.updateOne(id).set(data);
+
+      if (!!result) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The update process failed.");
+      }
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
+  delete: async (req, res) => {
+    try {
+      const data = req.body.inputs;
+      const id = data.id;
+
+      const result = await Room.destroyOne(id);
+
+      if (!!result) {
+        return res.json({ success: true });
+      } else {
+        throw new Error("The deletion process failed.");
+      }
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
     }
   },
 };
