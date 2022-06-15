@@ -37,6 +37,7 @@ module.exports.routes = {
   "GET /:location/main/byroom": resolver,
   "GET /:location/main": resolver,
   "GET /:location/front": resolver,
+  "GET /:location/settings/*": resolver,
   // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,
@@ -45,7 +46,6 @@ module.exports.routes = {
   // backend
   "GET /user/me": "UserController.me",
   "GET /user/addressbook": "UserController.addressbook",
-  "GET /room/list": "RoomController.list",
   "GET /room/choices": "RoomController.choices",
   "GET /location/choices": "LocationController.choices",
   "GET /location/first": "LocationController.first",
@@ -60,6 +60,23 @@ module.exports.routes = {
   "POST /visitor/create": "VisitorController.create",
   "POST /visitor/update": "VisitorController.update",
   "POST /visitor/delete": "VisitorController.delete",
+  // backend master
+  "GET /role/list": "RoleController.list",
+  "POST /role/create": "RoleController.create",
+  "POST /role/update": "RoleController.update",
+  "POST /role/delete": "RoleController.delete",
+  "GET /room/list": "RoomController.list",
+  "POST /room/create": "RoomController.create",
+  "POST /room/update": "RoomController.update",
+  "POST /room/delete": "RoomController.delete",
+  "GET /location/list": "LocationController.list",
+  "POST /location/create": "LocationController.create",
+  "POST /location/update": "LocationController.update",
+  "POST /location/delete": "LocationController.delete",
+  "GET /category/list": "CategoryController.list",
+  "POST /category/create": "CategoryController.create",
+  "POST /category/update": "CategoryController.update",
+  "POST /category/delete": "CategoryController.delete",
 
   // default
   "GET /": resolver,
