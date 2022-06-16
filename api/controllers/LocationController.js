@@ -38,6 +38,7 @@ module.exports = {
   create: async (req, res) => {
     try {
       const data = req.body.inputs;
+      delete data.id;
 
       const result = await Location.create(data).fetch();
 

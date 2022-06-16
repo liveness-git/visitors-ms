@@ -19,6 +19,7 @@ module.exports = {
   create: async (req, res) => {
     try {
       const data = req.body.inputs;
+      delete data.id;
 
       const result = await Role.create(data).fetch();
 
