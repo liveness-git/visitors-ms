@@ -309,6 +309,7 @@ module.exports = {
       const rooms = await Room.find({
         location: location.id,
         category: req.query.category,
+        type: "rooms", // フリースペースは表示対象外
       }).sort("sort ASC");
 
       // 該当会議室がない場合(roomのtype指定があるので可能性あり)

@@ -55,7 +55,15 @@ module.exports = {
       availabilityViewInterval: "5", //TODO: Interval config化？
       $select: "scheduleId,availabilityView",
     });
+
+    // フリースペース会議室の一覧取得
+    const freespaces = await Room.find({ type: "free" });
+
     return roomEmails.filter((email) => {
+      // フリースペースの場合は重複可のため、空き時間判定は不要
+      if (freespaces.find((free) => free.email === email)) {
+        return true;
+      }
       const schedule = schedules.find((sc) => sc.scheduleId === email);
       const viewArray = schedule.availabilityView.match(/.{1}/g);
       return viewArray.every(($) => $ === "0");
