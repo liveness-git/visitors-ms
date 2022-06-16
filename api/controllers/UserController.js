@@ -15,7 +15,7 @@ module.exports = {
       email: req.session.user.email,
       name: req.session.user.name,
       isAdmin: req.session.user.isAdmin,
-      isFront: req.session.user.isFront,
+      isFront: req.session.user.isFront || req.session.user.isAdmin,
     });
   },
 
