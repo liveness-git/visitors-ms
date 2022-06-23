@@ -349,13 +349,9 @@ module.exports = {
         }
       );
 
-      const categoryLabel = req.session.user.isFront
-        ? MSGraph.getCategoryLabel(req.query.category)
-        : MSGraph.getAuthorLabel(req.session.user.email);
-
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? categoryLabel : "",
+        isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
@@ -369,7 +365,7 @@ module.exports = {
         return await sails.helpers.attachVisitorData(
           event,
           req.session.user.email,
-          req.session.user.isFront
+          req.session.user.isFront || req.session.user.isAdmin
         );
       });
 

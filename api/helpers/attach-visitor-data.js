@@ -46,6 +46,9 @@ module.exports = {
       roomStatus: locations[first].status, // 表での表示用
       reservationName: author.emailAddress.name,
       isAuthor: inputs.isFront || author.emailAddress.address === inputs.email,
+      isAttendees: event.attendees.some(
+        (user) => user.emailAddress.address === inputs.email
+      ),
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
       visitCompany: "",
