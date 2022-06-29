@@ -26,4 +26,10 @@ module.exports = {
     location: { model: "location" },
     category: { model: "category" },
   },
+
+  inputCheck: async (data) => {
+    const errors = {};
+
+    return errors;
+  },
 };

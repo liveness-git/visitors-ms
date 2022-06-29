@@ -69,6 +69,12 @@ module.exports = {
       const data = req.body.inputs;
       delete data.id;
 
+      // 入力エラーチェック
+      const errors = await sails.models.room.inputCheck(data);
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
+
       const result = await Room.create(data).fetch();
 
       if (!!result) {
@@ -86,6 +92,12 @@ module.exports = {
     try {
       const data = req.body.inputs;
       const id = data.id;
+
+      // 入力エラーチェック
+      const errors = await sails.models.room.inputCheck(data);
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
 
       const result = await Room.updateOne(id).set(data);
 

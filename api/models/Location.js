@@ -23,4 +23,10 @@ module.exports = {
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
     rooms: { collection: "room" },
   },
+
+  inputCheck: async (data) => {
+    const errors = {};
+
+    return errors;
+  },
 };
