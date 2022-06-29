@@ -10,9 +10,16 @@ module.exports = {
     try {
       const $ = await Category.find().sort("sort ASC");
       const categories = $.filter((category) => {
+        // admin権限の場合は無条件に表示
+        if (req.session.user.isAdmin) {
+          return true;
+        }
+        // カテゴリが全員公開 or 限定公開の場合は対象者であるかチェック
         return (
-          category.members === null ||
-          category.members.some((email) => email === req.session.user.email)
+          !category.limitedPublic ||
+          category.members.some(
+            (user) => user.address === req.session.user.email
+          )
         );
       });
       return res.json(categories);

@@ -12,7 +12,13 @@ module.exports = {
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
     name: { type: "string", required: true },
     sort: { type: "string" },
-    members: { type: "json", columnType: "array" },
+    limitedPublic: { type: "boolean", defaultsTo: false },
+    members: { type: "json", columnType: "array", required: true },
+    // ↑ の中身は以下の通り
+    // {
+    // name: { type: "string", required: true },
+    // address: { type: "string", required: true },
+    // }
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
