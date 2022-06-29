@@ -17,6 +17,11 @@ module.exports = {
       unique: true,
     },
     members: { type: "json", columnType: "array", required: true },
+    // ↑ の中身は以下の通り
+    // {
+    // name: { type: "string", required: true },
+    // address: { type: "string", required: true },
+    // }
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
@@ -25,5 +30,18 @@ module.exports = {
     //  ╔═╗╔═╗╔═╗╔═╗╔═╗╦╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
+  },
+
+  inputCheck: async (data) => {
+    const errors = {};
+
+    if (data.mode === "ins") {
+      const unique = await Role.findOne({ name: data.name });
+      if (unique) {
+        errors.name = ["settings.form.role.error.name.unique"];
+      }
+    }
+
+    return errors;
   },
 };

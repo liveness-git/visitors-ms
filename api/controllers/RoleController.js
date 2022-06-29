@@ -21,6 +21,12 @@ module.exports = {
       const data = req.body.inputs;
       delete data.id;
 
+      // 入力エラーチェック
+      const errors = await sails.models.role.inputCheck(data);
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
+
       const result = await Role.create(data).fetch();
 
       if (!!result) {
