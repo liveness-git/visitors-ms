@@ -27,6 +27,13 @@ module.exports = {
   inputCheck: async (data) => {
     const errors = {};
 
+    if (data.mode === "ins") {
+      const unique = await Room.findOne({ url: data.url });
+      if (unique) {
+        errors.url = ["settings.form.location.error.url.unique"];
+      }
+    }
+
     return errors;
   },
 };

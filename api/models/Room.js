@@ -12,8 +12,13 @@ module.exports = {
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
     name: { type: "string", required: true },
     email: { type: "string", required: true, unique: true },
-    type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
     sort: { type: "string" },
+    usageRange: {
+      type: "string",
+      isIn: ["none", "inside", "outside"],
+      defaultsTo: "none",
+    },
+    type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
     teaSupply: { type: "boolean", defaultsTo: false },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
@@ -29,6 +34,13 @@ module.exports = {
 
   inputCheck: async (data) => {
     const errors = {};
+
+    if (data.mode === "ins") {
+      const unique = await Room.findOne({ email: data.email });
+      if (unique) {
+        errors.email = ["settings.form.room.error.email.unique"];
+      }
+    }
 
     return errors;
   },
