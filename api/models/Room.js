@@ -35,12 +35,16 @@ module.exports = {
   inputCheck: async (data) => {
     const errors = {};
 
-    if (data.mode === "ins") {
-      const unique = await Room.findOne({ email: data.email });
-      if (unique) {
-        errors.email = ["settings.form.room.error.email.unique"];
-      }
+    const unique = await Room.findOne({ email: data.email });
+    if (unique && unique.id !== data.id) {
+      errors.email = ["settings.form.room.error.email.unique"];
     }
+
+    return errors;
+  },
+
+  deleteCheck: async (data) => {
+    const errors = {};
 
     return errors;
   },

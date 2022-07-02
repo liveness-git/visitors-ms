@@ -35,4 +35,15 @@ module.exports = {
 
     return errors;
   },
+
+  deleteCheck: async (data) => {
+    const errors = {};
+
+    const associations = await Room.find({ category: data.id });
+    if (associations.length) {
+      errors.name = ["settings.form.common.error.association"];
+    }
+
+    return errors;
+  },
 };

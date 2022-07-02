@@ -35,12 +35,16 @@ module.exports = {
   inputCheck: async (data) => {
     const errors = {};
 
-    if (data.mode === "ins") {
-      const unique = await Role.findOne({ name: data.name });
-      if (unique) {
-        errors.name = ["settings.form.role.error.name.unique"];
-      }
+    const unique = await Role.findOne({ name: data.name });
+    if (unique && unique.id !== data.id) {
+      errors.name = ["settings.form.role.error.name.unique"];
     }
+
+    return errors;
+  },
+
+  deleteCheck: async (data) => {
+    const errors = {};
 
     return errors;
   },

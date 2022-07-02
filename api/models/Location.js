@@ -27,11 +27,20 @@ module.exports = {
   inputCheck: async (data) => {
     const errors = {};
 
-    if (data.mode === "ins") {
-      const unique = await Room.findOne({ url: data.url });
-      if (unique) {
-        errors.url = ["settings.form.location.error.url.unique"];
-      }
+    const unique = await Location.findOne({ url: data.url });
+    if (unique && unique.id !== data.id) {
+      errors.url = ["settings.form.location.error.url.unique"];
+    }
+
+    return errors;
+  },
+
+  deleteCheck: async (data) => {
+    const errors = {};
+
+    const associations = await Room.find({ location: data.id });
+    if (associations.length) {
+      errors.name = ["settings.form.common.error.association"];
     }
 
     return errors;

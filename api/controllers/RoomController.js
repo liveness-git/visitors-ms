@@ -31,6 +31,12 @@ module.exports = {
         );
       });
 
+      // 該当会議室がない場合
+      if (rooms.length === 0) {
+        return res.json(rooms);
+      }
+
+      // 空き時間検索が不要な場合
       if (!req.query.start || !req.query.end) {
         return res.json(rooms);
       }
@@ -123,6 +129,12 @@ module.exports = {
     try {
       const data = req.body.inputs;
       const id = data.id;
+
+      // 削除エラーチェック
+      const errors = await sails.models.room.deleteCheck(data);
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
 
       const result = await Room.destroyOne(id);
 

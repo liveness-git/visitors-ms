@@ -92,6 +92,12 @@ module.exports = {
       const data = req.body.inputs;
       const id = data.id;
 
+      // 削除エラーチェック
+      const errors = await sails.models.category.deleteCheck(data);
+      if (!!Object.keys(errors).length) {
+        return res.json({ success: false, errors: errors });
+      }
+
       const result = await Category.destroyOne(id);
 
       if (!!result) {
