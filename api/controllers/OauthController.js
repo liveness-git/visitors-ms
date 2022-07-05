@@ -49,13 +49,12 @@ module.exports = {
           const front = await Role.findOne({ name: "front" });
 
           // ユーザーのセッション情報をセット
-          // ※代表アカウントでログインしている場合は無条件にAdmin権限付与
+          // ※Adminロールが作成されていない場合は、Admin権限を無条件true
           req.session.user = {
             email: response.account.username,
             name: response.account.name,
             isAdmin:
-              response.account.username ===
-                sails.config.visitors.credential.username ||
+              !admin ||
               (!!admin &&
                 admin.members.some(
                   (user) => user.address === response.account.username
