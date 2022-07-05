@@ -92,10 +92,12 @@ module.exports = {
         );
       });
 
-      // 会議室status=accepted のみに絞り込む
+      // 会議室status=accepted & 社外会議 のみに絞り込む
       const result = $result.filter((event) => {
-        return Object.keys(event.resourcies).some(
-          (key) => event.resourcies[key].roomStatus === "accepted"
+        return (
+          Object.keys(event.resourcies).some(
+            (key) => event.resourcies[key].roomStatus === "accepted"
+          ) && event.usageRange === "outside"
         );
       });
 
