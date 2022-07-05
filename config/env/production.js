@@ -362,6 +362,7 @@ module.exports = {
       password: "",
       redirectUri: "",
     },
-    timezone: "",
+    timezone: "", // 国内なら"Asia/Tokyo"
+    isOwnerMode: true, // イベント登録を代表アカウントで一括して行う場合
   },
 };
