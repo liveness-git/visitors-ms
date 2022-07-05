@@ -58,6 +58,7 @@ module.exports = {
       // visitor登録
       const visitor = await Visitor.create({
         iCalUId: $.iCalUId,
+        usageRange: data.usageRange,
         visitCompany: data.visitCompany,
         visitorName: data.visitorName,
         resourcies: await sails.helpers.generateVisitorResourcies(

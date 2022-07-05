@@ -12,10 +12,21 @@ const { filter } = require("p-iteration");
 module.exports = {
   choices: async (req, res) => {
     try {
+      const criteria = {};
+
+      // 対象ロケーションをセット
       const location = await Location.findOne({ url: req.query.location });
-      const $rooms = await Room.find({ location: location.id }).sort(
-        "sort ASC"
-      );
+      criteria.location = location.id;
+
+      // 対象利用範囲の指定があった場合
+      if (!!req.query.usagerange) {
+        criteria.usageRange = [req.query.usagerange, "none"];
+      }
+
+      // 会議室一覧(仮)の取得
+      const $rooms = await Room.find(criteria).sort("sort ASC");
+
+      // 会議室一覧(仮)からカテゴリの表示権限による絞り込み
       const rooms = await filter($rooms, async (room) => {
         const category = await Category.findOne(room.category);
         // admin権限の場合は無条件に表示

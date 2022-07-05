@@ -51,6 +51,7 @@ module.exports = {
       ),
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
+      usageRange: "inside",
       visitCompany: "",
       visitorName: "",
       mailto: event.attendees.reduce(
@@ -101,6 +102,7 @@ module.exports = {
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
     if (!!visitor) {
       result.visitorId = visitor.id;
+      result.usageRange = visitor.usageRange;
       result.visitCompany = visitor.visitCompany;
       result.visitorName = visitor.visitorName;
       Object.keys(visitor.resourcies).map((room) => {

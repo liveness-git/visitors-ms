@@ -11,7 +11,12 @@ module.exports = {
     //  ╠═╝╠╦╝║║║║║ ║ ║╚╗╔╝║╣ ╚═╗
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
     iCalUId: { type: "string", required: true },
-    visitCompany: { type: "string", required: true },
+    usageRange: {
+      type: "string",
+      isIn: ["inside", "outside"],
+      defaultsTo: "inside",
+    },
+    visitCompany: { type: "string" },
     visitorName: { type: "string" },
     resourcies: { type: "json", required: true },
     // ↑ の中身は以下の通り
