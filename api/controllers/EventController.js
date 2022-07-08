@@ -376,6 +376,7 @@ module.exports = {
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
+          usageRange: room.usageRange === "none" ? "inside" : room.usageRange,
           scheduleItems: schedule.scheduleItems.map((item) => {
             return {
               status: item.status,
