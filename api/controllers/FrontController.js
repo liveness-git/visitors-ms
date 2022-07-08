@@ -14,6 +14,67 @@ const isOwnerMode = sails.config.visitors.isOwnerMode;
 const ownerEmail = sails.config.visitors.credential.username;
 
 module.exports = {
+  export: async (req, res) => {
+    try {
+      const data = req.body.inputs;
+
+      // 取得期間の設定
+      // const timestamp = Number(req.query.timestamp);
+      const startTimestamp = moment(data.startDate).startOf("date");
+      const endTimestamp = moment(data.endDate).endOf("date");
+
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
+
+      const categories = await Category.find().sort("sort ASC");
+
+      // カテゴリ単位で出力
+      const csv = await map(categories, async (category) => {
+        let events = [];
+        if (isOwnerMode) {
+          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+          events = await sails.helpers.getTargetFromEvents(
+            MSGraph.getCategoryLabel(category.id),
+            ownerToken,
+            ownerEmail,
+            startTimestamp,
+            endTimestamp,
+            data.location
+          );
+        } else {
+          // TODO: 会議室単位で取得ループ
+        }
+
+        // GraphAPIのevent情報とVisitor情報をマージ
+        const $result = await map(events, async (event) => {
+          return await sails.helpers.attachVisitorData(
+            event,
+            req.session.user.email,
+            true
+          );
+        });
+
+        // 会議室status=accepted & 社外会議 のみに絞り込む(front/visitlist にも同じ処理あり)
+        const result = $result.filter((event) => {
+          return (
+            Object.keys(event.resourcies).some(
+              (key) => event.resourcies[key].roomStatus === "accepted"
+            ) && event.usageRange === "outside"
+          );
+        });
+
+        return { category: category.name, data: result };
+      });
+
+      return res.json({ success: true, value: csv });
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
   checkin: async (req, res) => {
     try {
       const data = req.body.inputs;
@@ -92,7 +153,7 @@ module.exports = {
         );
       });
 
-      // 会議室status=accepted & 社外会議 のみに絞り込む
+      // 会議室status=accepted & 社外会議 のみに絞り込む(front/export にも同じ処理あり)
       const result = $result.filter((event) => {
         return (
           Object.keys(event.resourcies).some(
