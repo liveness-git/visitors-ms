@@ -23,6 +23,11 @@ module.exports = {
         criteria.usageRange = [req.query.usagerange, "none"];
       }
 
+      // タイプの指定があった場合
+      if (!!req.query.type) {
+        criteria.type = req.query.type;
+      }
+
       // 会議室一覧(仮)の取得
       const $rooms = await Room.find(criteria).sort("sort ASC");
 

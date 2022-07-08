@@ -8,9 +8,9 @@ module.exports = {
     "graphAPIからevent取得し、対象ロケーションの会議室予約のみにフィルタリングします",
 
   inputs: {
-    catgoryFilter: {
+    categoriesFilter: {
       type: "string",
-      description: "categoriesを絞り込む際のワード",
+      description: "GraphAPIのcategoriesを絞り込む際のワード",
       required: false,
     },
     accessToken: {
@@ -52,10 +52,10 @@ module.exports = {
       endDateTime: moment(inputs.endTimestamp).format(),
     };
     // filterの設定
-    if (inputs.catgoryFilter) {
+    if (inputs.categoriesFilter) {
       conditions[
         "$filter"
-      ] = `categories/any(c:c eq '${inputs.catgoryFilter}')`;
+      ] = `categories/any(c:c eq '${inputs.categoriesFilter}')`;
     }
 
     // graphAPIからevent取得

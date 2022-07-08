@@ -357,8 +357,7 @@ module.exports = {
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
-        req.query.location,
-        req.query.type
+        req.query.location
       );
 
       // GraphAPIのevent情報とVisitor情報をマージ
