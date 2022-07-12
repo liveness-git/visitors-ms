@@ -373,6 +373,7 @@ module.exports = {
       const schedules = $schedules.map((schedule) => {
         const room = rooms.find((room) => room.email === schedule.scheduleId);
         return {
+          date: startTimestamp.valueOf(),
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
@@ -391,6 +392,115 @@ module.exports = {
                 (key) =>
                   event.resourcies[key].roomEmail === schedule.scheduleId &&
                   event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
+              )
+            ) {
+              result.push(index);
+            }
+            return result;
+          }, []),
+        };
+      });
+
+      return res.json({ schedules: schedules, events: events });
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
+  byRoomWeekly: async (req, res) => {
+    try {
+      // 会議室の取得
+      const room = await Room.findOne(req.query.room);
+
+      // 取得期間の設定
+      const timestamp = Number(req.query.timestamp);
+      const startTimestamp = moment(timestamp).startOf("date");
+      const endTimestamp = moment(timestamp).add(7, "days").endOf("date");
+
+      // msalから有効なaccessToken取得
+      const accessToken = await MSAuth.acquireToken(
+        req.session.user.localAccountId
+      );
+      // msalから有効なaccessToken取得(代表)
+      const ownerToken = await MSAuth.acquireToken(
+        req.session.owner.localAccountId
+      );
+
+      // graphAPIから会議室の利用情報を取得
+      const $schedules = await MSGraph.getSchedule(
+        accessToken,
+        req.session.user.email,
+        {
+          startTime: {
+            dateTime: MSGraph.getGraphDateTime(startTimestamp),
+            timeZone: MSGraph.getTimeZone(),
+          },
+          endTime: {
+            dateTime: MSGraph.getGraphDateTime(endTimestamp),
+            timeZone: MSGraph.getTimeZone(),
+          },
+          schedules: [room.email],
+          $select: "scheduleId,scheduleItems",
+        }
+      );
+
+      // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
+      const $events = await sails.helpers.getTargetFromEvents(
+        isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
+        isOwnerMode ? ownerToken : accessToken,
+        isOwnerMode ? ownerEmail : req.session.user.email,
+        startTimestamp,
+        endTimestamp,
+        req.query.location
+      );
+
+      // GraphAPIのevent情報とVisitor情報をマージ
+      const events = await map($events, async (event) => {
+        return await sails.helpers.attachVisitorData(
+          event,
+          req.session.user.email,
+          req.session.user.isFront || req.session.user.isAdmin
+        );
+      });
+
+      // 1週間分の日付配列と該当スケジュールの割り当て
+      const weekly = _.range(0, 7).map(($) => {
+        const timestamp = startTimestamp.valueOf() + 24 * 60 * 60 * 1000 * $;
+        return {
+          timestamp: timestamp,
+          scheduleItems: $schedules[0].scheduleItems.filter((item) =>
+            moment(MSGraph.getTimestamp(item.start.dateTime)).isSame(
+              moment(timestamp),
+              "day"
+            )
+          ),
+        };
+      });
+
+      // 利用情報を再構成
+      const schedules = weekly.map((date) => {
+        return {
+          date: date.timestamp,
+          roomId: room.id,
+          roomName: room.name,
+          roomEmail: room.email,
+          usageRange: room.usageRange === "none" ? "inside" : room.usageRange,
+          scheduleItems: date.scheduleItems.map((item) => {
+            return {
+              status: item.status,
+              start: MSGraph.getTimestamp(item.start.dateTime),
+              end: MSGraph.getTimestamp(item.end.dateTime),
+            };
+          }),
+          // 該当日のイベント配列Indexを保持する
+          eventsIndex: events.reduce((result, event, index) => {
+            if (
+              event.resourcies[room.id].roomStatus === "accepted" && // 会議室status=accepted のみ
+              date.scheduleItems.some(
+                (item) =>
+                  MSGraph.getTimestamp(item.start.dateTime) ===
+                  event.startDateTime
               )
             ) {
               result.push(index);
