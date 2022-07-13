@@ -88,7 +88,6 @@ module.exports = {
       if (!req.session.user) {
         return res.ok();
       }
-      // console.log("AllAccounts : ", cca.getTokenCache().getAllAccounts());
 
       // msal内のキャッシュ削除 (Azure側のサインアウトは別途対応が必要）
       const msalTokenCache = cca.getTokenCache();

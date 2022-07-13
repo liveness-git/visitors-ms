@@ -374,6 +374,7 @@ module.exports = {
         const room = rooms.find((room) => room.email === schedule.scheduleId);
         return {
           date: startTimestamp.valueOf(),
+          categoryId: room.category,
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
@@ -482,6 +483,7 @@ module.exports = {
       const schedules = weekly.map((date) => {
         return {
           date: date.timestamp,
+          categoryId: room.category,
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
