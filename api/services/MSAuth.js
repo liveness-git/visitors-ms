@@ -24,7 +24,7 @@ const requestScopes = [
   "User.Read.All",
   "Calendars.Read",
   "Calendars.ReadWrite",
-]; // TODO: これでいいか要確認
+]; // TODO: Azureと同じ設定
 
 const msalApp = new msal.ConfidentialClientApplication(config);
 
