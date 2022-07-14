@@ -90,7 +90,6 @@ module.exports = {
         data,
         data.mailto.authors[0].address
       );
-      sails.log.debug(data.mailto.authors[0].address); //TODO:debug
 
       // 入力エラーの場合
       if (!!Object.keys(errors).length) {
@@ -99,7 +98,7 @@ module.exports = {
 
       // 更新分フィールドのみ抽出
       const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
-      console.log("変更分抽出：", params); //TODO:debug
+      sails.log.debug("変更分抽出：", params); //TODO:debug
 
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
