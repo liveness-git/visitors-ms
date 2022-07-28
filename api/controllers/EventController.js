@@ -12,7 +12,6 @@ const { map } = require("p-iteration");
 
 const isOwnerMode = sails.config.visitors.isOwnerMode;
 const ownerEmail = sails.config.visitors.credential.username;
-const isCreatedOnly = sails.config.visitors.isCreatedOnly;
 
 module.exports = {
   create: async (req, res) => {
@@ -275,30 +274,15 @@ module.exports = {
         req.session.owner.localAccountId
       );
 
-      let label = MSGraph.getVisitorsLabel();
-      if (isCreatedOnly) {
-        label = MSGraph.getAuthorLabel(req.session.user.email);
-      }
-
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? label : "",
+      const events = await sails.helpers.getTargetFromEvents(
+        isOwnerMode ? MSGraph.getAuthorLabel(req.session.user.email) : "",
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
         req.query.location
       );
-
-      let events = $events;
-      if (isOwnerMode && !isCreatedOnly) {
-        // ログインユーザーと関係のある予約を抽出
-        events = $events.filter((event) =>
-          event.attendees.some(
-            (user) => user.emailAddress.address === req.session.user.email
-          )
-        );
-      }
 
       // GraphAPIのevent情報とVisitor情報をマージ
       const result = await map(events, async (event) => {
