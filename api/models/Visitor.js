@@ -13,8 +13,8 @@ module.exports = {
     iCalUId: { type: "string", required: true },
     usageRange: {
       type: "string",
-      isIn: ["inside", "outside"],
-      defaultsTo: "inside",
+      isIn: ["outside", "inside"],
+      defaultsTo: "outside",
     },
     visitCompany: { type: "string" },
     visitorName: { type: "string" },
