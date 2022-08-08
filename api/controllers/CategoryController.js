@@ -5,11 +5,14 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const { filter } = require("p-iteration");
+
 module.exports = {
   choices: async (req, res) => {
     try {
       const $ = await Category.find().sort("sort ASC");
-      const categories = $.filter((category) => {
+
+      let categories = $.filter((category) => {
         // admin権限の場合は無条件に表示
         if (req.session.user.isAdmin) {
           return true;
@@ -22,6 +25,21 @@ module.exports = {
           )
         );
       });
+
+      // locationが設定されている場合、カテゴリに紐づく会議室が該当ロケーションに存在する場合のみ表示
+      if (!!req.query.location) {
+        categories = await filter(categories, async (category) => {
+          // ロケーションの取得
+          const location = await Location.findOne({ url: req.query.location });
+          // 会議室の取得
+          const rooms = await Room.find({
+            location: location.id,
+            category: category.id,
+          });
+          return rooms.length > 0;
+        });
+      }
+
       return res.json(categories);
     } catch (err) {
       sails.log.error(err.message);
