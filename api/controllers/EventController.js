@@ -383,6 +383,7 @@ module.exports = {
           req.session.user.isFront || req.session.user.isAdmin
         );
       });
+      const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
 
       // 各会議室の利用情報を再構成
       const schedules = await map($schedules, async (schedule) => {
@@ -392,19 +393,27 @@ module.exports = {
         const scheduleItems = await sails.helpers.getTimebarScheduleItems(
           schedule.scheduleItems
         );
+
         // 該当会議室のイベント配列Indexを保持する
-        const eventsIndex = events.reduce((result, event, index) => {
-          if (
-            Object.keys(event.resourcies).some(
-              (key) =>
-                event.resourcies[key].roomEmail === schedule.scheduleId &&
-                event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
-            )
-          ) {
-            result.push(index);
-          }
-          return result;
-        }, []);
+        const eventsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = eventsDummy.findIndex(
+                (event) =>
+                  event &&
+                  Object.keys(event.resourcies).some(
+                    (key) =>
+                      item.start === event.startDateTime &&
+                      item.end === event.endDateTime &&
+                      event.resourcies[key].roomEmail === schedule.scheduleId &&
+                      event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
+                  )
+              );
+              delete eventsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
 
         return {
           date: startTimestamp.valueOf(),
@@ -412,6 +421,7 @@ module.exports = {
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
+          type: room.type,
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,
@@ -480,6 +490,7 @@ module.exports = {
           req.session.user.isFront || req.session.user.isAdmin
         );
       });
+      const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
 
       // 1週間分の日付配列と該当スケジュールの割り当て
       const weekly = _.range(0, 7).map(($) => {
@@ -502,19 +513,21 @@ module.exports = {
           date.scheduleItems
         );
         // 該当日のイベント配列Indexを保持する
-        const eventsIndex = events.reduce((result, event, index) => {
-          if (
-            event.resourcies[room.id].roomStatus === "accepted" && // 会議室status=accepted のみ
-            date.scheduleItems.some(
-              (item) =>
-                MSGraph.getTimestamp(item.start.dateTime) ===
-                event.startDateTime
-            )
-          ) {
-            result.push(index);
-          }
-          return result;
-        }, []);
+        const eventsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = eventsDummy.findIndex(
+                (event) =>
+                  event &&
+                  item.start === event.startDateTime &&
+                  item.end === event.endDateTime &&
+                  event.resourcies[room.id].roomStatus === "accepted" // 会議室status=accepted のみ
+              );
+              delete eventsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
 
         return {
           date: date.timestamp,
@@ -522,6 +535,7 @@ module.exports = {
           roomId: room.id,
           roomName: room.name,
           roomEmail: room.email,
+          type: room.type,
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,

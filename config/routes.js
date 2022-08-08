@@ -85,4 +85,5 @@ module.exports.routes = {
 
   // default
   "GET /:location?/": resolver,
+  "GET /": resolver,
 };
