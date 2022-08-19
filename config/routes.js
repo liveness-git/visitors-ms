@@ -84,5 +84,6 @@ module.exports.routes = {
   "POST /category/delete": "CategoryController.delete",
 
   // default
+  "GET /:location?/": resolver,
   "GET /": resolver,
 };

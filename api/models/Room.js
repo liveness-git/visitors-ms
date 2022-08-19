@@ -15,7 +15,7 @@ module.exports = {
     sort: { type: "string" },
     usageRange: {
       type: "string",
-      isIn: ["none", "inside", "outside"],
+      isIn: ["none", "outside", "inside"],
       defaultsTo: "none",
     },
     type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },

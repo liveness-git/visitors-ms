@@ -234,7 +234,7 @@ module.exports = {
       : [];
 
     let bodyHtml = `<br/>\r\n<div>\r\n`;
-    bodyHtml += `この予定は Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
+    bodyHtml += `この予定は LIVENESS Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
     bodyHtml += `</div>\r\n`;
 
     const event = {
