@@ -9,8 +9,8 @@
   <Version>1.0.0.0</Version>
   <ProviderName>liveness</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Visitors for Microsoft">
-    <Override Locale="ja-jp" Value="Visitors for Microsoft" />
+  <DisplayName DefaultValue="LIVENESS Visitors for Microsoft">
+    <Override Locale="ja-jp" Value="LIVENESS Visitors for Microsoft" />
   </DisplayName>
   <Description DefaultValue="注意！）デモ段階のシステムです。"/>
   <IconUrl DefaultValue="https://localhost:3000/images/addin/top-64.png" />
