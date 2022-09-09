@@ -31,7 +31,8 @@ module.exports = {
         $top: 30,
       };
       if (req.query.filter) {
-        params.$filter = `startsWith(displayName,'${req.query.filter}') or startsWith(mail,'${req.query.filter}') `;
+        params.$filter = `startsWith(givenName,'${req.query.filter}') or startsWith(surname,'${req.query.filter}')`;
+        params.$filter += ` or startsWith(displayName,'${req.query.filter}') or startsWith(mail,'${req.query.filter}')`;
       }
 
       // 名前検索結果の取得
