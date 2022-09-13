@@ -213,7 +213,7 @@ module.exports = {
     const attendees = Object.keys(data.mailto).reduce((newObj, type) => {
       newObj[type] = data.mailto[type].map((user) => {
         return {
-          emailAddress: { ...user },
+          emailAddress: { name: user.name, address: user.address },
           type: type,
         };
       });
