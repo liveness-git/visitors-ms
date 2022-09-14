@@ -234,8 +234,15 @@ module.exports = {
         ]
       : [];
 
+    const location = await Location.findOne(room.location);
+    const linkUrl = `${sails.config.appUrl}/${location.url}/`;
+
     let bodyHtml = `<br/>\r\n<div>\r\n`;
     bodyHtml += `この予定は LIVENESS Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
+    bodyHtml += `<br/><br/>\r\n`;
+    bodyHtml += `以下URLからご確認ください。\r\n`;
+    bodyHtml += `<br/>\r\n`;
+    bodyHtml += `<a href='${linkUrl}'>${linkUrl}</a>\r\n`;
     bodyHtml += `</div>\r\n`;
 
     const event = {
