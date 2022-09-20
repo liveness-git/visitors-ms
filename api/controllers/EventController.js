@@ -20,10 +20,10 @@ module.exports = {
       const data = req.body.inputs;
 
       // event情報をgraphAPIに渡せるように成型
-      const [event, errors] = await MSGraph.generateEventData(
-        data,
-        req.session.user.email
-      );
+      const [event, errors] = await MSGraph.generateEventData(data, {
+        name: req.session.user.name,
+        email: req.session.user.email,
+      });
 
       // 入力エラーの場合
       if (!!Object.keys(errors).length) {
@@ -87,10 +87,10 @@ module.exports = {
       const visitorId = data.visitorId;
 
       // event情報をgraphAPIに渡せるように成型
-      const [updateEvent, errors] = await MSGraph.generateEventData(
-        data,
-        data.mailto.authors[0].address
-      );
+      const [updateEvent, errors] = await MSGraph.generateEventData(data, {
+        name: data.mailto.authors[0].name,
+        email: data.mailto.authors[0].address,
+      });
 
       // 入力エラーの場合
       if (!!Object.keys(errors).length) {
