@@ -111,6 +111,7 @@ module.exports = {
       checkIn: "",
       checkOut: "",
       visitorCardNumber: "",
+      lastUpdated: 0,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
@@ -132,6 +133,7 @@ module.exports = {
       result.checkIn = visitor.checkIn;
       result.checkOut = visitor.checkOut;
       result.visitorCardNumber = visitor.visitorCardNumber;
+      result.lastUpdated = visitor.updatedAt;
     }
     return exits.success(result);
   },
