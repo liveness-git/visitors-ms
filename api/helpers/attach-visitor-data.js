@@ -45,6 +45,9 @@ module.exports = {
       roomName: event.location.displayName, //表での表示用
       roomStatus: locations[first].status, // 表での表示用
       reservationName: author.emailAddress.name,
+      reservationStatus: event.attendees.filter(
+        (user) => user.emailAddress.address === author.emailAddress.address
+      )[0].status.response,
       isAuthor: inputs.isFront || author.emailAddress.address === inputs.email,
       isAttendees: event.attendees.some(
         (user) => user.emailAddress.address === inputs.email
@@ -62,19 +65,30 @@ module.exports = {
             // 予約者はauthors[0]に移動
             user.emailAddress.address === author.emailAddress.address
           ) {
-            newObj["authors"][0] = { ...user.emailAddress };
+            newObj["authors"][0] = {
+              status: user.status.response,
+              ...user.emailAddress,
+            };
           } else if (
             // 代表アカウントはauthors[1]に移動
             user.emailAddress.address ===
             sails.config.visitors.credential.username
           ) {
-            newObj["authors"][1] = { ...user.emailAddress };
+            newObj["authors"][1] = {
+              status: user.status.response,
+              ...user.emailAddress,
+            };
           } else {
             // その他は通常どおりに移動
             if (_.isArray(newObj[user.type])) {
-              newObj[user.type].push({ ...user.emailAddress });
+              newObj[user.type].push({
+                status: user.status.response,
+                ...user.emailAddress,
+              });
             } else {
-              newObj[user.type] = [{ ...user.emailAddress }];
+              newObj[user.type] = [
+                { status: user.status.response, ...user.emailAddress },
+              ];
             }
           }
           return newObj;
@@ -97,6 +111,7 @@ module.exports = {
       checkIn: "",
       checkOut: "",
       visitorCardNumber: "",
+      lastUpdated: 0,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
@@ -118,6 +133,7 @@ module.exports = {
       result.checkIn = visitor.checkIn;
       result.checkOut = visitor.checkOut;
       result.visitorCardNumber = visitor.visitorCardNumber;
+      result.lastUpdated = visitor.updatedAt;
     }
     return exits.success(result);
   },

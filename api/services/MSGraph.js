@@ -194,7 +194,7 @@ module.exports = {
     }
   },
 
-  generateEventData: async (data, authorEmail) => {
+  generateEventData: async (data, author) => {
     // 会議室の取得
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
@@ -213,7 +213,7 @@ module.exports = {
     const attendees = Object.keys(data.mailto).reduce((newObj, type) => {
       newObj[type] = data.mailto[type].map((user) => {
         return {
-          emailAddress: { ...user },
+          emailAddress: { name: user.name, address: user.address },
           type: type,
         };
       });
@@ -222,20 +222,31 @@ module.exports = {
 
     // attendees[0] = organizer
     const hiddenEmail = sails.config.visitors.isOwnerMode
-      ? [sails.config.visitors.credential.username, authorEmail] // [代表アカウント, 予約者]
-      : [authorEmail, sails.config.visitors.credential.username]; // [予約者, 代表アカウント]
+      ? [sails.config.visitors.credential.username, author.email] // [代表アカウント, 予約者]
+      : [author.email, sails.config.visitors.credential.username]; // [予約者, 代表アカウント]
 
     const categories = sails.config.visitors.isOwnerMode
       ? [
           MSGraph.getVisitorsLabel(), // プレーンラベルをセット
           MSGraph.getCategoryLabel(room.category), // カテゴリIDをセット
           MSGraph.getRoomLabel(room.id), // 会議室IDをセット
-          MSGraph.getAuthorLabel(authorEmail), // 予約者をセット
+          MSGraph.getAuthorLabel(author.email), // 予約者をセット
         ]
       : [];
 
+    const location = await Location.findOne(room.location);
+    const linkUrl = `${sails.config.appUrl}/${location.url}/`;
+
     let bodyHtml = `<br/>\r\n<div>\r\n`;
-    bodyHtml += `この予定は LIVENESS Visitors for Microsoft を使用して&lt;${authorEmail}&gt;さんから予約されました。`;
+    bodyHtml += `■予約情報`;
+    bodyHtml += `<br/>\r\n`;
+    bodyHtml += `・予約者：${author.name}&lt;${author.email}&gt;`;
+    bodyHtml += `<br/>\r\n`;
+    bodyHtml += `------------------------------------------------------------`;
+    bodyHtml += `<br/>\r\n`;
+    bodyHtml += `これは「LIVENESS Visitors for Microsoft」を使用して登録された予定です。以下リンクから起動できます。`;
+    bodyHtml += `<br/>\r\n`;
+    bodyHtml += `<a href='${linkUrl}'>${linkUrl}</a>\r\n`;
     bodyHtml += `</div>\r\n`;
 
     const event = {

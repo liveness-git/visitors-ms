@@ -366,4 +366,6 @@ module.exports = {
     isOwnerMode: true, // イベント登録を代表アカウントで一括して行う場合
     isCreatedOnly: false, // visitlistに表示するデータ：作成会議のみ→true、参加会議も含める→false
   },
+
+  appUrl: "",
 };
