@@ -124,11 +124,13 @@ module.exports = {
         req.session.owner.localAccountId
       );
 
+      const location = await Location.findOne({ url: req.query.location });
+
       let events = [];
       if (isOwnerMode) {
         // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
         events = await sails.helpers.getTargetFromEvents(
-          MSGraph.getCategoryLabel(req.query.category),
+          MSGraph.getLocationLabel(location.id),
           ownerToken,
           ownerEmail,
           startTimestamp,
