@@ -275,9 +275,10 @@ module.exports = {
         req.session.owner.localAccountId
       );
 
-      let label = MSGraph.getVisitorsLabel();
-      if (isCreatedOnly) {
-        label = MSGraph.getAuthorLabel(req.session.user.email);
+      let label = MSGraph.getAuthorLabel(req.session.user.email);
+      if (!isCreatedOnly) {
+        const location = await Location.findOne({ url: req.query.location });
+        label = MSGraph.getLocationLabel(location.id);
       }
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
