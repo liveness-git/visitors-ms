@@ -1,26 +1,11 @@
-# server
+# visitors-ms
 
-a [Sails v1](https://sailsjs.com) application
+## ver.1.0.0 (2022/09/26)
 
+- 初回リリース
 
-### Links
+## ver.1.0.1 (2022/10/xx)
 
-+ [Sails framework documentation](https://sailsjs.com/get-started)
-+ [Version notes / upgrading](https://sailsjs.com/documentation/upgrading)
-+ [Deployment tips](https://sailsjs.com/documentation/concepts/deployment)
-+ [Community support options](https://sailsjs.com/support)
-+ [Professional / enterprise options](https://sailsjs.com/enterprise)
-
-
-### Version info
-
-This app was originally generated on Tue Nov 09 2021 11:44:51 GMT+0900 (GMT+09:00) using Sails v1.5.0.
-
-<!-- Internally, Sails used [`sails-generate@2.0.4`](https://github.com/balderdashy/sails-generate/tree/v2.0.4/lib/core-generators/new). -->
-
-
-
-<!--
-Note:  Generators are usually run using the globally-installed `sails` CLI (command-line interface).  This CLI version is _environment-specific_ rather than app-specific, thus over time, as a project's dependencies are upgraded or the project is worked on by different developers on different computers using different versions of Node.js, the Sails dependency in its package.json file may differ from the globally-installed Sails CLI release it was originally generated with.  (Be sure to always check out the relevant [upgrading guides](https://sailsjs.com/upgrading) before upgrading the version of Sails used by your app.  If you're stuck, [get help here](https://sailsjs.com/support).)
--->
-
+- 受付画面：カテゴリ単位によるビュー切り替えを廃止。
+- 受付画面：カテゴリが４つ以上登録されている場合、csv 出力出来ない不具合を修正。
+- 受付画面：詳細ダイアログに最終更新日時を追加。
