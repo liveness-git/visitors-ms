@@ -28,47 +28,42 @@ module.exports = {
         req.session.owner.localAccountId
       );
 
-      const categories = await Category.find().sort("sort ASC");
+      const location = await Location.findOne({ url: data.location });
 
-      // カテゴリ単位で出力
-      const csv = await map(categories, async (category) => {
-        let events = [];
-        if (isOwnerMode) {
-          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-          events = await sails.helpers.getTargetFromEvents(
-            MSGraph.getCategoryLabel(category.id),
-            ownerToken,
-            ownerEmail,
-            startTimestamp,
-            endTimestamp,
-            data.location
-          );
-        } else {
-          // TODO: 会議室単位で取得ループ
-        }
+      let events = [];
+      if (isOwnerMode) {
+        // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+        events = await sails.helpers.getTargetFromEvents(
+          MSGraph.getLocationLabel(location.id),
+          ownerToken,
+          ownerEmail,
+          startTimestamp,
+          endTimestamp,
+          data.location
+        );
+      } else {
+        // TODO: 会議室単位で取得ループ
+      }
 
-        // GraphAPIのevent情報とVisitor情報をマージ
-        const $result = await map(events, async (event) => {
-          return await sails.helpers.attachVisitorData(
-            event,
-            req.session.user.email,
-            true
-          );
-        });
-
-        // 会議室status=accepted & 社外会議 のみに絞り込む(front/visitlist にも同じ処理あり)
-        const result = $result.filter((event) => {
-          return (
-            Object.keys(event.resourcies).some(
-              (key) => event.resourcies[key].roomStatus === "accepted"
-            ) && event.usageRange === "outside"
-          );
-        });
-
-        return { category: category.name, data: result };
+      // GraphAPIのevent情報とVisitor情報をマージ
+      const $result = await map(events, async (event) => {
+        return await sails.helpers.attachVisitorData(
+          event,
+          req.session.user.email,
+          true
+        );
       });
 
-      return res.json({ success: true, value: csv });
+      // 会議室status=accepted & 社外会議 のみに絞り込む(front/visitlist にも同じ処理あり)
+      const result = $result.filter((event) => {
+        return (
+          Object.keys(event.resourcies).some(
+            (key) => event.resourcies[key].roomStatus === "accepted"
+          ) && event.usageRange === "outside"
+        );
+      });
+
+      return res.json({ success: true, value: result });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
@@ -129,11 +124,13 @@ module.exports = {
         req.session.owner.localAccountId
       );
 
+      const location = await Location.findOne({ url: req.query.location });
+
       let events = [];
       if (isOwnerMode) {
         // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
         events = await sails.helpers.getTargetFromEvents(
-          MSGraph.getCategoryLabel(req.query.category),
+          MSGraph.getLocationLabel(location.id),
           ownerToken,
           ownerEmail,
           startTimestamp,

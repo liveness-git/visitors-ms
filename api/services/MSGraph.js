@@ -228,6 +228,7 @@ module.exports = {
     const categories = sails.config.visitors.isOwnerMode
       ? [
           MSGraph.getVisitorsLabel(), // プレーンラベルをセット
+          MSGraph.getLocationLabel(room.location), // ロケーションIDをセット
           MSGraph.getCategoryLabel(room.category), // カテゴリIDをセット
           MSGraph.getRoomLabel(room.id), // 会議室IDをセット
           MSGraph.getAuthorLabel(author.email), // 予約者をセット
@@ -368,6 +369,7 @@ module.exports = {
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
   getVisitorsLabel: () => `${labelTitle}.`,
+  getLocationLabel: (id) => `${labelTitle}locationId is ${id}.`,
   getCategoryLabel: (id) => `${labelTitle}categoryId is ${id}.`,
   getRoomLabel: (id) => `${labelTitle}roomId is ${id}.`,
   getAuthorLabel: (email) => `${labelTitle}Created by ${email}.`,
