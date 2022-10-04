@@ -6,6 +6,25 @@ const labelTitle = "Visitors:";
 
 module.exports = {
   baseUrl,
+
+  getEventsBySeriesMasterId: async (accessToken, email, seriesMasterId) => {
+    const path = `events/${seriesMasterId}/instances`;
+    const options = {
+      method: "GET",
+      params: {
+        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(),
+        endDateTime: moment(new Date("9999", "11", "31"))
+          .endOf("date")
+          .format(),
+      },
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+
+    return await MSGraph.getDataValues(accessToken, email, path, options);
+  },
+
   getEventByIcaluid: async (accessToken, email, iCalUId) => {
     const path = "events";
     const options = {
@@ -101,33 +120,7 @@ module.exports = {
       options.params = conditions;
     }
 
-    // リクエストとそのレスポンス
-    const result = await MSGraph.request(accessToken, email, path, options);
-    // return result.data;
-    const body = result.data;
-
-    // レスポンス中のイベント
-    const first = !!body.value ? body.value : null;
-
-    // レスポンス中に後続リンクがない場合はそのまま返す
-    if (!body["@odata.nextLink"]) {
-      return first;
-    }
-
-    // レスポンス中に後続リンクがある場合
-    // リンク先を再帰呼び出しして次の(ページングされた)イベントリストを取得。
-    // レスポンス中イベントに追加して返す
-    const nextOpt = _.chain(options)
-      .omit(["url", "params"]) // 項目を除去
-      .extend({ url: body["@odata.nextLink"] }) // URLを追加
-      .value();
-    const next = await MSGraph.requestCalendarView(
-      accessToken,
-      email,
-      null,
-      nextOpt
-    );
-    return first.concat(next);
+    return await MSGraph.getDataValues(accessToken, email, path, options);
   },
 
   postEvent: async (accessToken, email, params) => {
@@ -169,6 +162,30 @@ module.exports = {
       },
     });
     return $.data || null;
+  },
+
+  getDataValues: async (accessToken, email, path, options) => {
+    // リクエストとそのレスポンス
+    const result = await MSGraph.request(accessToken, email, path, options);
+    const body = result.data;
+
+    // レスポンス中のデータ
+    const first = !!body.value ? body.value : null;
+
+    // レスポンス中に後続リンクがない場合はそのまま返す
+    if (!body["@odata.nextLink"]) {
+      return first;
+    }
+
+    // レスポンス中に後続リンクがある場合
+    // リンク先を再帰呼び出しして次の(ページングされた)データリストを取得。
+    // レスポンス中データに追加して返す
+    const nextOpt = _.chain(options)
+      .omit(["url", "params"]) // 項目を除去
+      .extend({ url: body["@odata.nextLink"] }) // URLを追加
+      .value();
+    const next = await MSGraph.getDataValues(accessToken, email, path, nextOpt);
+    return first.concat(next);
   },
 
   request: async (accessToken, email, path, options) => {
@@ -287,6 +304,24 @@ module.exports = {
         ...attendees.optional,
       ],
     };
+
+    // 定期イベントの場合
+    if (data.isRecurrence) {
+      //TODO: debug
+      event.recurrence = {
+        pattern: {
+          type: "weekly",
+          interval: 1,
+          daysOfWeek: ["Monday"],
+        },
+        range: {
+          type: "endDate",
+          startDate: "2022-10-04",
+          endDate: "2022-12-31",
+        },
+      };
+    }
+
     return [event, errors];
   },
 

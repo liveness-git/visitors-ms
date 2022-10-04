@@ -1,5 +1,11 @@
 # visitors-ms
 
+## 0.0.0.63-2022-10-04
+
+- requestCalendarView。データを再帰的に取得する部分を共通化(getDataValues)
+- 関係性のある定期イベントを一括取得するロジック作成(getEventsBySeriesMasterId)
+- テスト的に定期データ作成できるよう設定。
+
 ## 0.0.0.62-2022-09-21
 
 - Ver.1.1.0

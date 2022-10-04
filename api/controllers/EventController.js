@@ -19,6 +19,8 @@ module.exports = {
     try {
       const data = req.body.inputs;
 
+      data.isRecurrence = true; //TODO: debug
+
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(data, {
         name: req.session.user.name,
@@ -56,20 +58,39 @@ module.exports = {
         event
       );
 
-      // visitor登録
-      const visitor = await Visitor.create({
-        iCalUId: $.iCalUId,
-        usageRange: data.usageRange,
-        visitCompany: data.visitCompany,
-        visitorName: data.visitorName,
-        resourcies: await sails.helpers.generateVisitorResourcies(
-          data.resourcies
-        ),
-        comment: data.comment,
-        contactAddr: data.contactAddr,
-      }).fetch();
+      sails.log.debug("id: ", $.id);
+      sails.log.debug("iCalUId: ", $.iCalUId);
 
-      if (!!visitor) {
+      let events = [];
+      if (data.isRecurrence) {
+        // 定期イベントの場合
+        events = [
+          ...(await MSGraph.getEventsBySeriesMasterId(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            $.id
+          )),
+        ];
+      } else {
+        events.push($); // 通常
+      }
+
+      // visitor登録(定期イベントの場合、複数作成が必要な為ループ)
+      const visitors = await map(events, async (event) => {
+        return await Visitor.create({
+          iCalUId: event.iCalUId,
+          usageRange: data.usageRange,
+          visitCompany: data.visitCompany,
+          visitorName: data.visitorName,
+          resourcies: await sails.helpers.generateVisitorResourcies(
+            data.resourcies
+          ),
+          comment: data.comment,
+          contactAddr: data.contactAddr,
+        }).fetch();
+      });
+
+      if (!!visitors.every((visitor) => !!visitor)) {
         return res.json({ success: true });
       } else {
         throw new Error("The registration process failed.");
@@ -309,6 +330,9 @@ module.exports = {
           false
         );
       });
+
+      // 定期的な予定が含まれる場合、ソートが崩れる為もう一度並び換える。
+      result.sort((a, b) => a.startDateTime - b.startDateTime);
 
       return res.json(result);
     } catch (err) {
