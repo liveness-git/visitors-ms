@@ -58,12 +58,9 @@ module.exports = {
         event
       );
 
-      sails.log.debug("id: ", $.id);
-      sails.log.debug("iCalUId: ", $.iCalUId);
-
       let events = [];
       if (data.isRecurrence) {
-        // 定期イベントの場合
+        // ** 定期イベントの場合、$はseriesMasterなのでinsetanseを取得
         events = [
           ...(await MSGraph.getEventsBySeriesMasterId(
             isOwnerMode ? ownerToken : accessToken,
@@ -72,7 +69,8 @@ module.exports = {
           )),
         ];
       } else {
-        events.push($); // 通常
+        // ** 通常
+        events.push($);
       }
 
       // visitor登録(定期イベントの場合、複数作成が必要な為ループ)
@@ -132,11 +130,25 @@ module.exports = {
       );
 
       // iCalUIdからevent取得
-      const $ = await MSGraph.getEventByIcaluid(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        data.iCalUId
-      );
+      let $ = null;
+      if (!!data.seriesMasterId) {
+        // ** 定期イベントの場合（今回のみ）
+        $ = (
+          await MSGraph.getEventsBySeriesMasterId(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            data.seriesMasterId,
+            data.iCalUId
+          )
+        )[0];
+      } else {
+        // ** 通常
+        $ = await MSGraph.getEventByIcaluid(
+          isOwnerMode ? ownerToken : accessToken,
+          isOwnerMode ? ownerEmail : req.session.user.email,
+          data.iCalUId
+        );
+      }
       if (!$) {
         throw new Error("Could not obtain MSGraph Event to update.");
       }
@@ -203,7 +215,7 @@ module.exports = {
         params
       );
       if (!event) {
-        throw new Error("Failed to delete MSGraph Event data.");
+        throw new Error("Failed to update MSGraph Event data.");
       }
 
       // リソース情報だけ再加工

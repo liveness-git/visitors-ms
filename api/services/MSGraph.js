@@ -7,20 +7,29 @@ const labelTitle = "Visitors:";
 module.exports = {
   baseUrl,
 
-  getEventsBySeriesMasterId: async (accessToken, email, seriesMasterId) => {
+  getEventsBySeriesMasterId: async (
+    accessToken,
+    email,
+    seriesMasterId,
+    iCalUId = null
+  ) => {
     const path = `events/${seriesMasterId}/instances`;
     const options = {
       method: "GET",
       params: {
-        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(),
+        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(), //TODO:問題ないか確認
         endDateTime: moment(new Date("9999", "11", "31"))
           .endOf("date")
-          .format(),
+          .format(), //TODO:問題ないか確認
       },
       headers: {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     };
+
+    if (!!iCalUId) {
+      options.params.$filter = `iCalUId eq '${iCalUId}'`;
+    }
 
     return await MSGraph.getDataValues(accessToken, email, path, options);
   },

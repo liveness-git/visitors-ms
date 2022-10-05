@@ -112,6 +112,8 @@ module.exports = {
       checkOut: "",
       visitorCardNumber: "",
       lastUpdated: 0,
+      seriesMasterId: event.seriesMasterId ? event.seriesMasterId : undefined,
+      recurrence: event.recurrence ? event.recurrence : undefined,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
