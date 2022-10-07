@@ -3,15 +3,32 @@ const { reduce } = require("p-iteration");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
+const visitorsSelecter =
+  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,seriesMasterId,recurrence";
 
 module.exports = {
   baseUrl,
+
+  getEventById: async (accessToken, email, id) => {
+    const path = `events/${id}`;
+    const options = {
+      method: "GET",
+      params: { $select: visitorsSelecter },
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+    const result = await MSGraph.request(accessToken, email, path, options);
+    // return result.data.value;
+    return result.data;
+  },
 
   getEventsBySeriesMasterId: async (
     accessToken,
     email,
     seriesMasterId,
-    iCalUId = null
+    iCalUId = null,
+    selecter = null
   ) => {
     const path = `events/${seriesMasterId}/instances`;
     const options = {
@@ -21,6 +38,7 @@ module.exports = {
         endDateTime: moment(new Date("9999", "11", "31"))
           .endOf("date")
           .format(), //TODO:問題ないか確認
+        $select: selecter ? selecter : visitorsSelecter,
       },
       headers: {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
@@ -105,8 +123,7 @@ module.exports = {
       startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
       $orderBy: "start/dateTime",
-      $select:
-        "start,end,iCalUId,subject,categories,organizer,location,locations,attendees",
+      $select: visitorsSelecter,
     }
   ) => {
     return MSGraph.requestCalendarView(accessToken, email, conditions);
