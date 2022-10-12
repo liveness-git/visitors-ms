@@ -58,36 +58,36 @@ module.exports = {
         event
       );
 
-      let events = [];
-      if (data.isRecurrence) {
-        // ** 定期イベントの場合、$はseriesMasterなのでinstancesも取得
-        events = [
-          $, // seriesMasterも登録対象(全体更新のとき必要)
-          ...(await MSGraph.getEventsBySeriesMasterId(
+      // visitor作成 (iCaluid以外を設定)
+      const newData = {
+        usageRange: data.usageRange,
+        visitCompany: data.visitCompany,
+        visitorName: data.visitorName,
+        resourcies: await sails.helpers.generateVisitorResourcies(
+          data.resourcies
+        ),
+        comment: data.comment,
+        contactAddr: data.contactAddr,
+      };
+      // visitor登録
+      const visitor = await Visitor.create({
+        ...newData,
+        iCalUId: $.iCalUId,
+      }).fetch();
+
+      const visitors = [visitor];
+
+      // 定期イベントの場合、複数作成
+      if (!!$.recurrence) {
+        visitors.concat(
+          await sails.helpers.createVisitorInstances(
             isOwnerMode ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
-            $.id
-          )),
-        ];
-      } else {
-        // ** 通常
-        events.push($);
+            $.id,
+            newData
+          )
+        );
       }
-
-      // visitor登録(定期イベントの場合、複数作成が必要な為ループ)
-      const visitors = await map(events, async (event) => {
-        return await Visitor.create({
-          iCalUId: event.iCalUId,
-          usageRange: data.usageRange,
-          visitCompany: data.visitCompany,
-          visitorName: data.visitorName,
-          resourcies: await sails.helpers.generateVisitorResourcies(
-            data.resourcies
-          ),
-          comment: data.comment,
-          contactAddr: data.contactAddr,
-        }).fetch();
-      });
 
       if (!!visitors.every((visitor) => !!visitor)) {
         return res.json({ success: true });
@@ -324,7 +324,7 @@ module.exports = {
         throw new Error("Failed to update Visitor data.");
       }
 
-      // seriesMasterに紐づくvisitorの削除
+      // seriesMasterに紐づく旧visitorの削除
       if (!!backupEvents.length) {
         const oldVisitors = await Visitor.destroy({
           iCalUId: { in: backupEvents.map((backup) => backup.iCalUId) },
@@ -333,6 +333,7 @@ module.exports = {
           throw new Error("Failed to delete Visitors data.");
         }
       }
+
       // visitorを再度作成
       // const newVisitors = await Visitor.create(newData).fetch();
       // if (!newVisitors) {
