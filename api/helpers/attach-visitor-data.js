@@ -114,6 +114,7 @@ module.exports = {
       lastUpdated: 0,
       seriesMasterId: event.seriesMasterId ? event.seriesMasterId : undefined,
       recurrence: event.recurrence ? event.recurrence : undefined,
+      eventType: event.type,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });

@@ -38,8 +38,11 @@ module.exports = {
     );
     // instances分をvisitorを登録
     const result = await map(events, async (event) => {
-      const visitor = { ...inputs.newData, iCalUId: event.iCalUId };
-      return await Visitor.create(visitor).fetch();
+      return await Visitor.create({
+        ...inputs.newData,
+        iCalUId: event.iCalUId,
+        eventType: event.type,
+      }).fetch();
     });
 
     return exits.success(result);

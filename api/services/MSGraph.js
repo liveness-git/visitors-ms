@@ -4,7 +4,7 @@ const { reduce } = require("p-iteration");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
 const visitorsSelecter =
-  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,seriesMasterId,recurrence";
+  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence";
 
 module.exports = {
   baseUrl,
@@ -34,11 +34,11 @@ module.exports = {
     const options = {
       method: "GET",
       params: {
-        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(), //TODO:問題ないか確認
+        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(),
         endDateTime: moment(new Date("9999", "11", "31"))
           .endOf("date")
-          .format(), //TODO:問題ないか確認
-        $select: selecter ? selecter : visitorsSelecter,
+          .format(),
+        $select: !!selecter ? selecter : visitorsSelecter,
       },
       headers: {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,

@@ -63,7 +63,6 @@ module.exports.routes = {
   "POST /front/export": "FrontController.export",
   "POST /event/create": "EventController.create",
   "POST /event/update": "EventController.update",
-  "POST /event/update/seriesmaster": "EventController.updateSeriesMaster",
   "POST /event/delete": "EventController.delete",
   "POST /visitor/create": "VisitorController.create",
   "POST /visitor/update": "VisitorController.update",

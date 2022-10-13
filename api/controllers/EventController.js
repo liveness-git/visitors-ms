@@ -19,7 +19,7 @@ module.exports = {
     try {
       const data = req.body.inputs;
 
-      data.isRecurrence = true; //TODO: debug
+      data.isRecurrence = true; // TODO:あとで
 
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(data, {
@@ -58,7 +58,7 @@ module.exports = {
         event
       );
 
-      // visitor作成 (iCaluid以外を設定)
+      // visitor作成
       const newData = {
         usageRange: data.usageRange,
         visitCompany: data.visitCompany,
@@ -69,10 +69,12 @@ module.exports = {
         comment: data.comment,
         contactAddr: data.contactAddr,
       };
+
       // visitor登録
       const visitor = await Visitor.create({
         ...newData,
         iCalUId: $.iCalUId,
+        eventType: $.type,
       }).fetch();
 
       const visitors = [visitor];
@@ -84,12 +86,12 @@ module.exports = {
             isOwnerMode ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             $.id,
-            newData
+            { ...newData, seriesMasterICalUId: $.iCalUId }
           )
         );
       }
 
-      if (!!visitors.every((visitor) => !!visitor)) {
+      if (visitors.every((visitor) => !!visitor)) {
         return res.json({ success: true });
       } else {
         throw new Error("The registration process failed.");
@@ -133,7 +135,7 @@ module.exports = {
       // iCalUIdからevent取得
       let $ = null;
       if (!!data.seriesMasterId) {
-        // ** 定期イベントの場合（今回のみ）
+        // ** 定期イベント(今回のみ)の場合
         $ = (
           await MSGraph.getEventsBySeriesMasterId(
             isOwnerMode ? ownerToken : accessToken,
@@ -143,7 +145,7 @@ module.exports = {
           )
         )[0];
       } else {
-        // ** 通常
+        // ** 通常・定期イベント(全体)の場合
         $ = await MSGraph.getEventByIcaluid(
           isOwnerMode ? ownerToken : accessToken,
           isOwnerMode ? ownerEmail : req.session.user.email,
@@ -209,7 +211,7 @@ module.exports = {
       }
 
       // eventの更新
-      const event = MSGraph.patchEvent(
+      const event = await MSGraph.patchEvent(
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         $.id,
@@ -223,122 +225,76 @@ module.exports = {
       const resourcies = await sails.helpers.generateVisitorResourcies(
         data.resourcies
       );
-      const newData = { ...data, resourcies: resourcies };
+      const newData = {
+        ...data,
+        resourcies: resourcies,
+        eventType: event.type, // 定期イベントの場合、変更する可能性(occurrence → exception)がある為、上書き。
+      };
 
       // visitorの更新/作成
       let visitor = null;
       if (visitorId) {
         // visitorが存在する場合はupdate
-        visitor = await Visitor.updateOne(visitorId).set(newData);
+        visitor = await Visitor.updateOne(visitorId).set({ ...newData });
       } else {
         // visitorが存在しない場合はcreate
-        visitor = await Visitor.create(newData).fetch();
-      }
-      if (!visitor) {
-        throw new Error("Failed to update Visitor data.");
+        visitor = await Visitor.create({ ...newData }).fetch();
       }
 
-      return res.json({ success: true });
-    } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
-    }
-  },
+      const visitors = [visitor];
 
-  updateSeriesMaster: async (req, res) => {
-    try {
-      const dirtyFields = req.body.dirtyFields;
-      const data = req.body.inputs;
-      const visitorId = data.visitorId;
+      // 定期イベント(全体)の場合
+      if (!!data.recurrence) {
+        let isRecreate = false;
 
-      // event情報をgraphAPIに渡せるように成型
-      const [updateEvent, errors] = await MSGraph.generateEventData(data, {
-        name: data.mailto.authors[0].name,
-        email: data.mailto.authors[0].address,
-      });
+        // newDataはseriesMasterの情報なので一部削除
+        const newDataInstances = { ...newData };
+        delete newDataInstances.iCalUId;
+        delete newDataInstances.eventType;
 
-      // 入力エラーの場合
-      if (!!Object.keys(errors).length) {
-        return res.json({ success: false, errors: errors });
-      }
+        // recurrenceが変更されている場合
+        if (!!dirtyFields.recurrence) {
+          // seriesMasterに紐付くvisitorを全削除
+          const oldVisitors = await Visitor.destroy({
+            seriesMasterICalUId: event.iCalUId,
+          }).fetch();
+          if (!oldVisitors) {
+            throw new Error("Failed to delete Visitors data.");
+          }
+          // 再登録
+          isRecreate = true;
 
-      // 更新分フィールドのみ抽出
-      const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
-      // sails.log.debug("変更分抽出：", params); //TODO: debug
+          // visitorが存在する場合はupdate
+        } else {
+          const occurrence = await Visitor.update({
+            seriesMasterICalUId: event.iCalUId,
+            eventType: "occurrence", // type:occurrenceのみ上書き
+          })
+            .set({ ...newDataInstances })
+            .fetch();
 
-      // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
-      // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+          // visitorが存在しない場合はcreate
+          if (!occurrence) {
+            isRecreate = true;
+          }
+        }
 
-      // event(seriesMaster)を取得
-      const $ = await MSGraph.getEventByIcaluid(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        data.iCalUId
-      );
-      if (!$) {
-        throw new Error("Could not obtain MSGraph MasterEvent to update.");
-      }
-
-      // 後でvisitor側を削除するために、seriesMasterに紐づくevent(iCalUIdだけ)を取得
-      const backupEvents = await MSGraph.getEventsBySeriesMasterId(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        $.id,
-        null,
-        "iCalUId"
-      );
-
-      // event(seriesMaster)の更新
-      const event = MSGraph.patchEvent(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        $.id,
-        params
-      );
-      if (!event) {
-        throw new Error("Failed to update MSGraph MasterEvent data.");
-      }
-
-      // リソース情報だけ再加工
-      const resourcies = await sails.helpers.generateVisitorResourcies(
-        data.resourcies
-      );
-      const newData = { ...data, resourcies: resourcies };
-
-      // visitor(seriesMaster)の更新/作成
-      let visitor = null;
-      if (visitorId) {
-        // visitorが存在する場合はupdate
-        visitor = await Visitor.updateOne(visitorId).set(newData);
-      } else {
-        // visitorが存在しない場合はcreate
-        visitor = await Visitor.create(newData).fetch();
-      }
-      if (!visitor) {
-        throw new Error("Failed to update Visitor data.");
-      }
-
-      // seriesMasterに紐づく旧visitorの削除
-      if (!!backupEvents.length) {
-        const oldVisitors = await Visitor.destroy({
-          iCalUId: { in: backupEvents.map((backup) => backup.iCalUId) },
-        }).fetch();
-        if (oldVisitors.length !== backupEvents.length) {
-          throw new Error("Failed to delete Visitors data.");
+        // 登録
+        if (isRecreate) {
+          visitors.concat(
+            await sails.helpers.createVisitorInstances(
+              isOwnerMode ? ownerToken : accessToken,
+              isOwnerMode ? ownerEmail : req.session.user.email,
+              $.id,
+              { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
+            )
+          );
         }
       }
 
-      // visitorを再度作成
-      // const newVisitors = await Visitor.create(newData).fetch();
-      // if (!newVisitors) {
-      //   throw new Error("Failed to update Visitor data.");
-      // }
+      if (!visitors.every((visitor) => !!visitor)) {
+        throw new Error("Failed to update Visitor data.");
+      }
 
       return res.json({ success: true });
     } catch (err) {

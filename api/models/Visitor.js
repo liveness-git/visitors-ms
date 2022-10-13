@@ -31,6 +31,13 @@ module.exports = {
     checkOut: { type: "string" },
     visitorCardNumber: { type: "string" },
 
+    eventType: {
+      type: "string",
+      isIn: ["singleInstance", "occurrence", "exception", "seriesMaster"],
+      required: true,
+    },
+    seriesMasterICalUId: { type: "string" }, // 定期イベントのInstancesのみ
+
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
     //  ╚═╝╩ ╩╚═╝╚═╝═╩╝╚═╝
