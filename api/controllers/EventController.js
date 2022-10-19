@@ -253,7 +253,7 @@ module.exports = {
         let isRecreate = false;
 
         // newDataはseriesMasterの情報なので一部削除
-        const newDataInstances = { ...newData };
+        const newDataInstances = _.cloneDeep(newData);
         delete newDataInstances.iCalUId;
         delete newDataInstances.eventType;
 
