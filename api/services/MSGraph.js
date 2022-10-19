@@ -332,17 +332,13 @@ module.exports = {
     };
 
     // 定期イベントの場合
-    if (data.isRecurrence) {
+    if (!!data.recurrence) {
       //TODO: debug
       event.recurrence = {
-        pattern: {
-          type: "weekly",
-          interval: 1,
-          daysOfWeek: ["Monday"],
-        },
+        pattern: { ...data.recurrence.pattern },
         range: {
           type: "endDate",
-          startDate: "2022-10-04",
+          startDate: "2022-11-01",
           endDate: "2022-12-31",
         },
       };
@@ -373,6 +369,9 @@ module.exports = {
             result["location"] = { ...updateEvent["location"] };
             result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
           }
+          break;
+        case "recurrence":
+          result["recurrence"] = _.cloneDeep(updateEvent["recurrence"]);
           break;
         default:
       }
