@@ -19,7 +19,7 @@ module.exports = {
     try {
       const data = req.body.inputs;
 
-      data.isRecurrence = true; // TODO:あとで
+      data.isRecurrence = false; // TODO:あとで
 
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(data, {
@@ -42,13 +42,15 @@ module.exports = {
       );
 
       // 空き時間チェック
-      const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
-        accessToken,
-        req.session.user.email,
-        event
-      );
-      if (!isAvailable) {
-        return res.json({ success: false, errors: errAvailable });
+      if (!data.recurrence) {
+        const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
+          accessToken,
+          req.session.user.email,
+          event
+        );
+        if (!isAvailable) {
+          return res.json({ success: false, errors: errAvailable });
+        }
       }
 
       // graphAPIからevent登録
@@ -157,7 +159,10 @@ module.exports = {
       }
 
       // 空き時間チェック(予約時間が変更されている場合のみ)
-      if (!!dirtyFields.startTime || !!dirtyFields.endTime) {
+      if (
+        !data.recurrence &&
+        (!!dirtyFields.startTime || !!dirtyFields.endTime)
+      ) {
         // 変更前情報
         const beforeStart = MSGraph.getTimestamp($.start.dateTime);
         const beforeEnd = MSGraph.getTimestamp($.end.dateTime);
