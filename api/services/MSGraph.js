@@ -333,14 +333,33 @@ module.exports = {
 
     // 定期イベントの場合
     if (!!data.recurrence) {
-      //TODO: debug
+      // rangeオブジェクト作成
+      const recurrenceRange = {
+        type: data.recurrence.range.type,
+        startDate: moment(
+          new Date(data.recurrence.range.startDate).getTime()
+        ).format("YYYY-MM-DD"),
+        recurrenceTimeZone: MSGraph.getTimeZone(),
+      };
+      switch (data.recurrence.range.type) {
+        case "endDate":
+          recurrenceRange.endDate = moment(
+            new Date(data.recurrence.range.endDate).getTime()
+          ).format("YYYY-MM-DD");
+          break;
+        case "numbered":
+          recurrenceRange.numberOfOccurrences =
+            data.recurrence.numberOfOccurrences;
+          break;
+        // case "noEnd":
+        //   break;
+        default:
+          break;
+      }
+      // recurrenceオブジェクト作成
       event.recurrence = {
         pattern: { ...data.recurrence.pattern },
-        range: {
-          type: "endDate",
-          startDate: "2022-11-01",
-          endDate: "2022-12-31",
-        },
+        range: { ...recurrenceRange, type: data.recurrence.range.type },
       };
     }
 
