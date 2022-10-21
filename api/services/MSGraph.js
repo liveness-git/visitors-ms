@@ -351,7 +351,7 @@ module.exports = {
           recurrenceRange.numberOfOccurrences =
             data.recurrence.numberOfOccurrences;
           break;
-        // case "noEnd":
+        // case "noEnd"://TODO: noEnd未対応（最大５年問題）
         //   break;
         default:
           break;
