@@ -20,6 +20,7 @@ module.exports = {
     },
     type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
     teaSupply: { type: "boolean", defaultsTo: false },
+    comment: { type: "string" },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
