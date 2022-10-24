@@ -24,7 +24,7 @@ module.exports = {
     // ↑ の中身は以下の通り
     // <room.id>:{
     // teaSupply: { type: "boolean", defaultsTo: false },
-    // numberRequired: { type: "number", required: true, min: 0 },
+    // numberOfTeaSupply: { type: "number", required: true, min: 0 },
     // }
     comment: { type: "string" },
     contactAddr: { type: "string" },

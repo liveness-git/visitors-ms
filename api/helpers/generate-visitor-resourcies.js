@@ -19,7 +19,7 @@ module.exports = {
     const result = {
       [resourcies[roomId].roomForEdit]: {
         teaSupply: resourcies[roomId].teaSupply,
-        numberRequired: Number(resourcies[roomId].numberRequired),
+        numberOfTeaSupply: Number(resourcies[roomId].numberOfTeaSupply),
       },
     };
 
