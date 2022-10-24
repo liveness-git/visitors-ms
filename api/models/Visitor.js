@@ -25,6 +25,7 @@ module.exports = {
     // <room.id>:{
     // teaSupply: { type: "boolean", defaultsTo: false },
     // numberOfTeaSupply: { type: "number", required: true, min: 0 },
+    // teaDetails: { type: "string" },
     // }
     comment: { type: "string" },
     contactAddr: { type: "string" },

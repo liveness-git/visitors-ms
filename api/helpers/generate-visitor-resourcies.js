@@ -20,6 +20,7 @@ module.exports = {
       [resourcies[roomId].roomForEdit]: {
         teaSupply: resourcies[roomId].teaSupply,
         numberOfTeaSupply: Number(resourcies[roomId].numberOfTeaSupply),
+        teaDetails: resourcies[roomId].teaDetails,
       },
     };
 

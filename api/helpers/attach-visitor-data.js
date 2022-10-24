@@ -102,6 +102,7 @@ module.exports = {
           roomStatus: locations[room].status,
           teaSupply: false,
           numberOfTeaSupply: 0,
+          teaDetails: "",
         };
         return newObj;
       }, {}),
