@@ -65,6 +65,8 @@ module.exports = {
         usageRange: data.usageRange,
         visitCompany: data.visitCompany,
         visitorName: data.visitorName,
+        numberOfVisitor: Number(data.numberOfVisitor),
+        numberOfEmployee: Number(data.numberOfEmployee),
         resourcies: await sails.helpers.generateVisitorResourcies(
           data.resourcies
         ),
@@ -232,6 +234,8 @@ module.exports = {
       );
       const newData = {
         ...data,
+        numberOfVisitor: Number(data.numberOfVisitor),
+        numberOfEmployee: Number(data.numberOfEmployee),
         resourcies: resourcies,
         eventType: event.type, // 定期イベントの場合、変更する可能性(occurrence → exception)がある為、上書き。
       };

@@ -18,12 +18,13 @@ module.exports = {
     },
     visitCompany: { type: "string" },
     visitorName: { type: "string" },
+    numberOfVisitor: { type: "number", required: true, min: 0 },
+    numberOfEmployee: { type: "number", required: true, min: 0 },
     resourcies: { type: "json", required: true },
     // ↑ の中身は以下の通り
     // <room.id>:{
     // teaSupply: { type: "boolean", defaultsTo: false },
-    // numberOfVisitor: { type: "number", required: true, min: 0 },
-    // numberOfEmployee: { type: "number", required: true, min: 0 },
+    // numberRequired: { type: "number", required: true, min: 0 },
     // }
     comment: { type: "string" },
     contactAddr: { type: "string" },
