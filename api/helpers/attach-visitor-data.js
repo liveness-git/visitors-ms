@@ -101,8 +101,7 @@ module.exports = {
           roomEmail: locations[room].locationUri,
           roomStatus: locations[room].status,
           teaSupply: false,
-          numberOfVisitor: 0,
-          numberOfEmployee: 0,
+          numberRequired: 0,
         };
         return newObj;
       }, {}),
@@ -123,6 +122,8 @@ module.exports = {
       result.usageRange = visitor.usageRange;
       result.visitCompany = visitor.visitCompany;
       result.visitorName = visitor.visitorName;
+      result.numberOfVisitor = visitor.numberOfVisitor;
+      result.numberOfEmployee = visitor.numberOfEmployee;
       Object.keys(visitor.resourcies).map((room) => {
         if (result.resourcies.hasOwnProperty(room)) {
           result.resourcies[room] = {
