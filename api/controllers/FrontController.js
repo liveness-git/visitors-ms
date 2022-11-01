@@ -75,10 +75,44 @@ module.exports = {
       const data = req.body.inputs;
       const visitorId = data.id;
 
-      const visitor = await Visitor.updateOne(visitorId).set({
+      const checkin = {
         checkIn: data.checkIn,
         visitorCardNumber: data.visitorCardNumber,
-      });
+      };
+
+      // 定期イベントの場合、GraphAPIのtype:occurrence → exception に変更
+      if (!!data.seriesMasterId) {
+        // msalから有効なaccessToken取得(代表)
+        const ownerToken = await MSAuth.acquireToken(
+          req.session.owner.localAccountId
+        );
+        // iCalUIdからevent取得
+        // ** 定期イベント(今回のみ)の場合
+        const $ = (
+          await MSGraph.getEventsBySeriesMasterId(
+            ownerToken,
+            ownerEmail,
+            data.seriesMasterId,
+            data.iCalUId
+          )
+        )[0];
+        if (!$) {
+          throw new Error("Could not obtain MSGraph Event to update.");
+        }
+        // 空更新
+        const event = await MSGraph.patchEvent(
+          ownerToken,
+          ownerEmail,
+          $.id,
+          {}
+        );
+        if (!event) {
+          throw new Error("Failed to update MSGraph Event data.");
+        }
+        checkin.eventType = event.type; // 最新のtypeに変更
+      }
+
+      const visitor = await Visitor.updateOne(visitorId).set({ ...checkin });
 
       if (!!visitor) {
         return res.json({ success: true });

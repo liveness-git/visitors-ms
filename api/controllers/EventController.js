@@ -218,6 +218,8 @@ module.exports = {
       }
 
       // eventの更新
+      // ※定期イベントの場合、patch内容が無くても更新したら(type:occurrence → exception)に変更される。
+      // visitor情報の更新だけでもexceptionになる必要がある為、GraphAPI側に変更内容が無くても更新する。
       const event = await MSGraph.patchEvent(
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
@@ -237,7 +239,7 @@ module.exports = {
         numberOfVisitor: Number(data.numberOfVisitor),
         numberOfEmployee: Number(data.numberOfEmployee),
         resourcies: resourcies,
-        eventType: event.type, // 定期イベントの場合、変更する可能性(occurrence → exception)がある為、上書き。
+        eventType: event.type, // 変更される可能性がある為、最新を上書き。
       };
 
       // visitorの更新/作成
@@ -261,8 +263,8 @@ module.exports = {
         delete newDataInstances.iCalUId;
         delete newDataInstances.eventType;
 
-        // recurrenceが変更されている場合
         if (!!dirtyFields.recurrence) {
+          // recurrenceが変更されている場合
           // seriesMasterに紐付くvisitorを全削除
           const oldVisitors = await Visitor.destroy({
             seriesMasterICalUId: event.iCalUId,
@@ -270,14 +272,13 @@ module.exports = {
           if (!oldVisitors) {
             throw new Error("Failed to delete Visitors data.");
           }
-          // 再登録
-          isRecreate = true;
-
-          // visitorが存在する場合はupdate
+          isRecreate = true; // 再登録
         } else {
+          // recurrence以外のマスタ変更は、type:occurrenceのみを一括更新
+          // visitorが存在する場合はupdate
           const occurrence = await Visitor.update({
             seriesMasterICalUId: event.iCalUId,
-            eventType: "occurrence", // type:occurrenceのみ上書き
+            eventType: "occurrence", // type:occurrenceのみ
           })
             .set({ ...newDataInstances })
             .fetch();
@@ -286,9 +287,10 @@ module.exports = {
           if (!occurrence) {
             isRecreate = true;
           }
+          visitors.concat(occurrence);
         }
 
-        // 登録
+        // インスタンス登録
         if (isRecreate) {
           visitors.concat(
             await sails.helpers.createVisitorInstances(
@@ -298,6 +300,17 @@ module.exports = {
               { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
             )
           );
+        }
+      }
+
+      // 定期イベントの解除
+      if (params.recurrence === null) {
+        // seriesMasterに紐付くvisitorを全削除
+        const instances = await Visitor.destroy({
+          seriesMasterICalUId: event.iCalUId,
+        }).fetch();
+        if (!instances) {
+          throw new Error("Failed to delete Visitors data.");
         }
       }
 
@@ -327,14 +340,29 @@ module.exports = {
       );
 
       // iCalUIdからevent取得
-      const $ = await MSGraph.getEventByIcaluid(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        data.iCalUId
-      );
+      let $ = null;
+      if (!!data.seriesMasterId) {
+        // ** 定期イベント(今回のみ)の場合
+        $ = (
+          await MSGraph.getEventsBySeriesMasterId(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            data.seriesMasterId,
+            data.iCalUId
+          )
+        )[0];
+      } else {
+        // ** 通常・定期イベント(全体)の場合
+        $ = await MSGraph.getEventByIcaluid(
+          isOwnerMode ? ownerToken : accessToken,
+          isOwnerMode ? ownerEmail : req.session.user.email,
+          data.iCalUId
+        );
+      }
       if (!$) {
         throw new Error("Could not obtain MSGraph Event to delete.");
       }
+
       // eventの削除
       const event = MSGraph.deleteEvent(
         isOwnerMode ? ownerToken : accessToken,
@@ -350,6 +378,17 @@ module.exports = {
         const visitor = await Visitor.destroyOne(visitorId);
         if (!visitor) {
           throw new Error("Failed to delete Visitor data.");
+        }
+      }
+
+      // 定期イベント(全体)の場合
+      if (!!data.recurrence) {
+        // seriesMasterに紐付くvisitorを全削除
+        const oldVisitors = await Visitor.destroy({
+          seriesMasterICalUId: data.iCalUId,
+        }).fetch();
+        if (!oldVisitors) {
+          throw new Error("Failed to delete Visitors data.");
         }
       }
 

@@ -390,7 +390,12 @@ module.exports = {
           }
           break;
         case "recurrence":
-          result["recurrence"] = _.cloneDeep(updateEvent["recurrence"]);
+          if (!!updateEvent["recurrence"]) {
+            result["recurrence"] = _.cloneDeep(updateEvent["recurrence"]);
+          } else {
+            result["recurrence"] = null; // 定期イベントの解除はnullをセット
+          }
+
           break;
         default:
       }
