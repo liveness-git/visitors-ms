@@ -63,6 +63,9 @@ module.exports = {
         );
       });
 
+      // 定期的な予定が含まれる場合、ソートが崩れる為もう一度並び換える。
+      result.sort((a, b) => a.startDateTime - b.startDateTime);
+
       return res.json({ success: true, value: result });
     } catch (err) {
       sails.log.error(err.message);
@@ -192,6 +195,9 @@ module.exports = {
           ) && event.usageRange === "outside"
         );
       });
+
+      // 定期的な予定が含まれる場合、ソートが崩れる為もう一度並び換える。
+      result.sort((a, b) => a.startDateTime - b.startDateTime);
 
       return res.json(result);
     } catch (err) {
