@@ -431,6 +431,22 @@ module.exports = {
     }
   },
 
+  checkInstances: async (req, res) => {
+    try {
+      const iCalUId = req.param("iCalUId");
+
+      // 定期イベント内にtype:exceptionが存在するか
+      const result = await Visitor.find({
+        seriesMasterICalUId: iCalUId,
+        eventType: "exception", // type:exceptionのみ
+      });
+      return res.json({ isIncludesException: result.length > 0 });
+    } catch (err) {
+      sails.log.error(err.message);
+      return res.status(400).json({ errors: err.message });
+    }
+  },
+
   visitList: async (req, res) => {
     try {
       // 取得期間の設定

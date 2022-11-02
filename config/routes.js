@@ -54,6 +54,7 @@ module.exports.routes = {
   "GET /location/first": "LocationController.first",
   "GET /category/choices": "CategoryController.choices",
   "GET /front/visitlist": "FrontController.visitList",
+  "GET /event/checkinstances/:iCalUId": "EventController.checkInstances",
   "GET /event/visitinfo/:id": "EventController.visitInfo",
   "GET /event/visitlist": "EventController.visitList",
   "GET /event/byroom": "EventController.byRoom",
