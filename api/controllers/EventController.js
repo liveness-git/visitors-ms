@@ -54,11 +54,26 @@ module.exports = {
       }
 
       // graphAPIからevent登録
-      const $ = await MSGraph.postEvent(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        event
-      );
+      let $;
+      try {
+        $ = await MSGraph.postEvent(
+          isOwnerMode ? ownerToken : accessToken,
+          isOwnerMode ? ownerEmail : req.session.user.email,
+          event
+        );
+      } catch (e) {
+        // 指定された繰り返しに指定された範囲に出現インスタンスが存在しない場合
+        if (e.response.data.error.code === "ErrorRecurrenceHasNoOccurrence") {
+          return res.json({
+            success: false,
+            errors: {
+              recurrence: [
+                "visitdialog.form.error.recurrence.has-no-occurrence",
+              ],
+            },
+          });
+        }
+      }
 
       // visitor作成
       const newData = {
@@ -220,14 +235,30 @@ module.exports = {
       // eventの更新
       // ※定期イベントの場合、patch内容が無くても更新したら(type:occurrence → exception)に変更される。
       // visitor情報の更新だけでもexceptionになる必要がある為、GraphAPI側に変更内容が無くても更新する。
-      const event = await MSGraph.patchEvent(
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        $.id,
-        params
-      );
-      if (!event) {
-        throw new Error("Failed to update MSGraph Event data.");
+      let event;
+      try {
+        event = await MSGraph.patchEvent(
+          isOwnerMode ? ownerToken : accessToken,
+          isOwnerMode ? ownerEmail : req.session.user.email,
+          $.id,
+          params
+        );
+        if (!event) {
+          throw new Error("Failed to update MSGraph Event data.");
+        }
+      } catch (e) {
+        // 指定された繰り返しに指定された範囲に出現インスタンスが存在しない場合
+        if (e.response.data.error.code === "ErrorRecurrenceHasNoOccurrence") {
+          return res.json({
+            success: false,
+            errors: {
+              recurrence: [
+                "visitdialog.form.error.recurrence.has-no-occurrence",
+              ],
+            },
+          });
+        }
+        throw e;
       }
 
       // リソース情報だけ再加工
