@@ -19,7 +19,11 @@ module.exports = {
       defaultsTo: "none",
     },
     type: { type: "string", isIn: ["rooms", "free"], defaultsTo: "rooms" },
-    teaSupply: { type: "boolean", defaultsTo: false },
+    teaSupply: { type: "json", required: true },
+    // ↑ の中身は以下の通り {
+    //   outside:{ type: "boolean", defaultsTo: false },
+    //   inside:{ type: "boolean", defaultsTo: false },
+    // }
     comment: { type: "string" },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
