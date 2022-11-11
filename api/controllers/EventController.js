@@ -79,7 +79,6 @@ module.exports = {
       const newData = {
         usageRange: data.usageRange,
         visitCompany: data.visitCompany,
-        visitorName: data.visitorName,
         numberOfVisitor: Number(data.numberOfVisitor),
         numberOfEmployee: Number(data.numberOfEmployee),
         resourcies: await sails.helpers.generateVisitorResourcies(

@@ -16,8 +16,11 @@ module.exports = {
       isIn: ["outside", "inside"],
       defaultsTo: "outside",
     },
-    visitCompany: { type: "string" },
-    visitorName: { type: "string" },
+    visitCompany: { type: "json" },
+    // ↑ の中身は以下の通り {
+    // name: { type: "string" },
+    // rep: { type: "string" },
+    // }
     numberOfVisitor: { type: "number", required: true, min: 0 },
     numberOfEmployee: { type: "number", required: true, min: 0 },
     resourcies: { type: "json", required: true },
