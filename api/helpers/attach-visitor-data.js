@@ -55,7 +55,7 @@ module.exports = {
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
       usageRange: "outside",
-      visitCompany: { name: "", rep: "" },
+      visitCompany: [{ name: "", rep: "" }],
       mailto: event.attendees.reduce(
         (newObj, user) => {
           if (user.type === "resource") {
