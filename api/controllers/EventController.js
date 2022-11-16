@@ -19,8 +19,6 @@ module.exports = {
     try {
       const data = req.body.inputs;
 
-      data.isRecurrence = false; // TODO:あとで
-
       // event情報をgraphAPIに渡せるように成型
       const [event, errors] = await MSGraph.generateEventData(data, {
         name: req.session.user.name,

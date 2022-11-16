@@ -17,10 +17,12 @@ module.exports = {
       defaultsTo: "outside",
     },
     visitCompany: { type: "json" },
-    // ↑ の中身は以下の通り {
+    // ↑ の中身は以下の通り
+    // usageRange === "outside" ? {
     // name: { type: "string" },
     // rep: { type: "string" },
     // }[]
+    // usageRange === "inside" ? []
     numberOfVisitor: { type: "number", required: true, min: 0 },
     numberOfEmployee: { type: "number", required: true, min: 0 },
     resourcies: { type: "json", required: true },
