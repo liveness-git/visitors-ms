@@ -33,6 +33,14 @@ module.exports = {
 
       // 会議室一覧(仮)からカテゴリの表示権限による絞り込み
       const rooms = await filter($rooms, async (room) => {
+        // 特定会議室と同一カテゴリの会議室だけ集める場合
+        if (!!req.query.samecategory) {
+          const targetRoom = await Room.findOne(req.query.samecategory);
+          if (room.category !== targetRoom.category) {
+            return false;
+          }
+        }
+
         const category = await Category.findOne(room.category);
         // admin権限の場合は無条件に表示
         if (req.session.user.isAdmin) {

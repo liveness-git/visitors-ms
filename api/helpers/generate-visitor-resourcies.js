@@ -19,8 +19,8 @@ module.exports = {
     const result = {
       [resourcies[roomId].roomForEdit]: {
         teaSupply: resourcies[roomId].teaSupply,
-        numberOfVisitor: Number(resourcies[roomId].numberOfVisitor),
-        numberOfEmployee: Number(resourcies[roomId].numberOfEmployee),
+        numberOfTeaSupply: Number(resourcies[roomId].numberOfTeaSupply),
+        teaDetails: resourcies[roomId].teaDetails,
       },
     };
 

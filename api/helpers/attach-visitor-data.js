@@ -55,8 +55,7 @@ module.exports = {
       isMSMultipleLocations: !!(event.locations.length - 1), // 複数ある場合は編集不可にするためのフラグ(会議室以外の場所が登録されている可能性を考慮)
       visitorId: "",
       usageRange: "outside",
-      visitCompany: "",
-      visitorName: "",
+      visitCompany: [{ name: "", rep: "" }],
       mailto: event.attendees.reduce(
         (newObj, user) => {
           if (user.type === "resource") {
@@ -101,8 +100,8 @@ module.exports = {
           roomEmail: locations[room].locationUri,
           roomStatus: locations[room].status,
           teaSupply: false,
-          numberOfVisitor: 0,
-          numberOfEmployee: 0,
+          numberOfTeaSupply: 0,
+          teaDetails: "",
         };
         return newObj;
       }, {}),
@@ -112,6 +111,9 @@ module.exports = {
       checkOut: "",
       visitorCardNumber: "",
       lastUpdated: 0,
+      seriesMasterId: event.seriesMasterId ? event.seriesMasterId : undefined,
+      recurrence: event.recurrence ? event.recurrence : undefined,
+      eventType: event.type,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
@@ -119,7 +121,8 @@ module.exports = {
       result.visitorId = visitor.id;
       result.usageRange = visitor.usageRange;
       result.visitCompany = visitor.visitCompany;
-      result.visitorName = visitor.visitorName;
+      result.numberOfVisitor = visitor.numberOfVisitor;
+      result.numberOfEmployee = visitor.numberOfEmployee;
       Object.keys(visitor.resourcies).map((room) => {
         if (result.resourcies.hasOwnProperty(room)) {
           result.resourcies[room] = {

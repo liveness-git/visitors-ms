@@ -3,9 +3,55 @@ const { reduce } = require("p-iteration");
 
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
+const visitorsSelecter =
+  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence";
 
 module.exports = {
   baseUrl,
+
+  getEventById: async (accessToken, email, id) => {
+    const path = `events/${id}`;
+    const options = {
+      method: "GET",
+      params: { $select: visitorsSelecter },
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+    const result = await MSGraph.request(accessToken, email, path, options);
+    // return result.data.value;
+    return result.data;
+  },
+
+  getEventsBySeriesMasterId: async (
+    accessToken,
+    email,
+    seriesMasterId,
+    iCalUId = null,
+    selecter = null
+  ) => {
+    const path = `events/${seriesMasterId}/instances`;
+    const options = {
+      method: "GET",
+      params: {
+        startDateTime: moment(new Date(0)).startOf("date").add(1, "s").format(),
+        endDateTime: moment(new Date("9999", "11", "31"))
+          .endOf("date")
+          .format(),
+        $select: !!selecter ? selecter : visitorsSelecter,
+      },
+      headers: {
+        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      },
+    };
+
+    if (!!iCalUId) {
+      options.params.$filter = `iCalUId eq '${iCalUId}'`;
+    }
+
+    return await MSGraph.getDataValues(accessToken, email, path, options);
+  },
+
   getEventByIcaluid: async (accessToken, email, iCalUId) => {
     const path = "events";
     const options = {
@@ -77,8 +123,7 @@ module.exports = {
       startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
       $orderBy: "start/dateTime",
-      $select:
-        "start,end,iCalUId,subject,categories,organizer,location,locations,attendees",
+      $select: visitorsSelecter,
     }
   ) => {
     return MSGraph.requestCalendarView(accessToken, email, conditions);
@@ -101,33 +146,7 @@ module.exports = {
       options.params = conditions;
     }
 
-    // リクエストとそのレスポンス
-    const result = await MSGraph.request(accessToken, email, path, options);
-    // return result.data;
-    const body = result.data;
-
-    // レスポンス中のイベント
-    const first = !!body.value ? body.value : null;
-
-    // レスポンス中に後続リンクがない場合はそのまま返す
-    if (!body["@odata.nextLink"]) {
-      return first;
-    }
-
-    // レスポンス中に後続リンクがある場合
-    // リンク先を再帰呼び出しして次の(ページングされた)イベントリストを取得。
-    // レスポンス中イベントに追加して返す
-    const nextOpt = _.chain(options)
-      .omit(["url", "params"]) // 項目を除去
-      .extend({ url: body["@odata.nextLink"] }) // URLを追加
-      .value();
-    const next = await MSGraph.requestCalendarView(
-      accessToken,
-      email,
-      null,
-      nextOpt
-    );
-    return first.concat(next);
+    return await MSGraph.getDataValues(accessToken, email, path, options);
   },
 
   postEvent: async (accessToken, email, params) => {
@@ -169,6 +188,30 @@ module.exports = {
       },
     });
     return $.data || null;
+  },
+
+  getDataValues: async (accessToken, email, path, options) => {
+    // リクエストとそのレスポンス
+    const result = await MSGraph.request(accessToken, email, path, options);
+    const body = result.data;
+
+    // レスポンス中のデータ
+    const first = !!body.value ? body.value : null;
+
+    // レスポンス中に後続リンクがない場合はそのまま返す
+    if (!body["@odata.nextLink"]) {
+      return first;
+    }
+
+    // レスポンス中に後続リンクがある場合
+    // リンク先を再帰呼び出しして次の(ページングされた)データリストを取得。
+    // レスポンス中データに追加して返す
+    const nextOpt = _.chain(options)
+      .omit(["url", "params"]) // 項目を除去
+      .extend({ url: body["@odata.nextLink"] }) // URLを追加
+      .value();
+    const next = await MSGraph.getDataValues(accessToken, email, path, nextOpt);
+    return first.concat(next);
   },
 
   request: async (accessToken, email, path, options) => {
@@ -245,7 +288,7 @@ module.exports = {
     bodyHtml += `<br/>\r\n`;
     bodyHtml += `------------------------------------------------------------`;
     bodyHtml += `<br/>\r\n`;
-    bodyHtml += `これは「LIVENESS Visitors for Microsoft」を使用して登録された予定です。以下リンクから起動できます。`;
+    bodyHtml += `これは「LIVENESS Visitors for Microsoft」を使用して処理された予定です。以下リンクから起動できます。`;
     bodyHtml += `<br/>\r\n`;
     bodyHtml += `<a href='${linkUrl}'>${linkUrl}</a>\r\n`;
     bodyHtml += `</div>\r\n`;
@@ -287,6 +330,39 @@ module.exports = {
         ...attendees.optional,
       ],
     };
+
+    // 定期イベントの場合
+    if (!!data.recurrence) {
+      // rangeオブジェクト作成
+      const recurrenceRange = {
+        type: data.recurrence.range.type,
+        startDate: moment(
+          new Date(data.recurrence.range.startDate).getTime()
+        ).format("YYYY-MM-DD"),
+        recurrenceTimeZone: MSGraph.getTimeZone(),
+      };
+      switch (data.recurrence.range.type) {
+        case "endDate":
+          recurrenceRange.endDate = moment(
+            new Date(data.recurrence.range.endDate).getTime()
+          ).format("YYYY-MM-DD");
+          break;
+        case "numbered":
+          recurrenceRange.numberOfOccurrences =
+            data.recurrence.numberOfOccurrences;
+          break;
+        // case "noEnd"://TODO: noEnd未対応（最大５年問題）
+        //   break;
+        default:
+          break;
+      }
+      // recurrenceオブジェクト作成
+      event.recurrence = {
+        pattern: { ...data.recurrence.pattern },
+        range: { ...recurrenceRange, type: data.recurrence.range.type },
+      };
+    }
+
     return [event, errors];
   },
 
@@ -312,6 +388,14 @@ module.exports = {
             result["location"] = { ...updateEvent["location"] };
             result["attendees"] = _.cloneDeep(updateEvent["attendees"]);
           }
+          break;
+        case "recurrence":
+          if (!!updateEvent["recurrence"]) {
+            result["recurrence"] = _.cloneDeep(updateEvent["recurrence"]);
+          } else {
+            result["recurrence"] = null; // 定期イベントの解除はnullをセット
+          }
+
           break;
         default:
       }
