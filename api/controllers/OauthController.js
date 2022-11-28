@@ -65,7 +65,27 @@ module.exports = {
                 (user) => user.address === response.account.username
               ),
             localAccountId: response.account.localAccountId,
+            contactAddr: undefined,
           };
+
+          // ユーザーの連絡先を別途設定
+          const contactAddrUrl = "https://graph.microsoft.com/v1.0/contacts"; //TODO: sails.config.visitors.contactAddr
+          if (contactAddrUrl) {
+            const $ = await MSGraph.request(
+              response.accessToken,
+              req.session.user.email,
+              "",
+              {
+                url: contactAddrUrl,
+                method: "GET",
+                params: {
+                  $filter: `mail eq '${req.session.user.email}'`, //TODO: sails.config.visitors.contactAddr
+                },
+              }
+            );
+            const contacts = $.data.value;
+            req.session.user.contactAddr = contacts; //TODO: sails.config.visitors.contactAddr
+          }
 
           // 代表アカウントも同時に設定
           const localAccountId = await MSAuth.acquireOwnerAccountId();

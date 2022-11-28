@@ -16,6 +16,7 @@ module.exports = {
       name: req.session.user.name,
       isAdmin: req.session.user.isAdmin,
       isFront: req.session.user.isFront || req.session.user.isAdmin,
+      contactAddr: req.session.user.contactAddr,
     });
   },
 
