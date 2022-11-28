@@ -24,6 +24,7 @@ const requestScopes = [
   "User.Read.All",
   "Calendars.Read",
   "Calendars.ReadWrite",
+  "OrgContact.Read.All", //TODO: sails.config.visitors.contactAddr
 ]; // TODO: Azureと同じ設定
 
 const msalApp = new msal.ConfidentialClientApplication(config);
