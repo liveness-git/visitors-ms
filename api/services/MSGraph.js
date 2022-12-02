@@ -242,9 +242,14 @@ module.exports = {
     const roomId = Object.keys(data.resourcies)[0]; // TODO:複数会議室未対応
     const room = await Room.findOne(data.resourcies[roomId].roomForEdit);
 
+    // 清掃オプション時間
+    const cleaningTime = room.cleaningOption
+      ? sails.config.visitors.cleaningMinute * 60 * 1000
+      : 0;
+
     // 日時の設定
     const startTimestamp = new Date(data.startTime).getTime();
-    const endTimestamp = new Date(data.endTime).getTime();
+    const endTimestamp = new Date(data.endTime).getTime() + cleaningTime;
 
     // エラーチェック------
     const errors = {};

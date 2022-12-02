@@ -624,7 +624,7 @@ module.exports = {
                   Object.keys(event.resourcies).some(
                     (key) =>
                       item.start === event.startDateTime &&
-                      item.end === event.endDateTime &&
+                      item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
                       event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
                   )
@@ -740,7 +740,7 @@ module.exports = {
                 (event) =>
                   event &&
                   item.start === event.startDateTime &&
-                  item.end === event.endDateTime &&
+                  item.end === event.endDateTime + event.cleaningTime &&
                   event.resourcies[room.id].roomStatus === "accepted" // 会議室status=accepted のみ
               );
               delete eventsDummy[index]; // 次回検索対象から外す
