@@ -86,19 +86,33 @@ module.exports = {
     email,
     startTimestamp,
     endTimestamp,
-    roomEmails
+    roomEmails,
+    isConsiderCleaning = false // endTimestampに清掃時間が含まれていない場合true
   ) => {
+    const availabilityViewInterval = 5; //TODO: Interval config化？
+
+    let cleaningTime = 0;
+    let cleaningInterval = 0;
+    let roomCleaning = [];
+
+    // 清掃オプションを考慮する場合、清掃時間を無条件追加して、あとで引く方法をとっている。
+    if (isConsiderCleaning) {
+      cleaningTime = sails.config.visitors.cleaningMinute * 60 * 1000;
+      cleaningInterval = cleaningTime / (availabilityViewInterval * 60 * 1000);
+      roomCleaning = await Room.find({ cleaningOption: true }); // 清掃会議室の一覧取得
+    }
+
     const schedules = await MSGraph.getSchedule(accessToken, email, {
       startTime: {
         dateTime: MSGraph.getGraphDateTime(startTimestamp),
         timeZone: MSGraph.getTimeZone(),
       },
       endTime: {
-        dateTime: MSGraph.getGraphDateTime(endTimestamp),
+        dateTime: MSGraph.getGraphDateTime(endTimestamp + cleaningTime), // 清掃時間加算
         timeZone: MSGraph.getTimeZone(),
       },
       schedules: roomEmails,
-      availabilityViewInterval: "5", //TODO: Interval config化？
+      availabilityViewInterval: availabilityViewInterval.toString(),
       $select: "scheduleId,availabilityView",
     });
 
@@ -111,6 +125,19 @@ module.exports = {
         return true;
       }
       const schedule = schedules.find((sc) => sc.scheduleId === email);
+
+      // 清掃オプションを考慮する場合
+      if (isConsiderCleaning) {
+        // 清掃不要会議室の場合、空き時間判定のendを縮める
+        // 会議室設定の清掃オプションはフィールド自体存在しない場合があるのでtrueで絞り込んだ配列を利用
+        if (roomCleaning.every((cleaning) => cleaning.email !== email)) {
+          schedule.availabilityView = schedule.availabilityView.slice(
+            0,
+            -1 * cleaningInterval
+          );
+        }
+      }
+
       const viewArray = schedule.availabilityView.match(/.{1}/g);
       return viewArray.every(($) => $ === "0");
     });

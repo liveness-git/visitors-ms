@@ -40,6 +40,7 @@ module.exports = {
       ? sails.config.visitors.cleaningMinute * 60 * 1000
       : 0;
 
+    // 清掃時間が含まれている場合は減算
     const endDateTime = MSGraph.getTimestamp(event.end.dateTime) - cleaningTime;
     const endTime = moment(endDateTime).format("HH:mm");
 
@@ -52,9 +53,8 @@ module.exports = {
       subject: event.subject,
       apptTime: `${startDate} ${startTime}-${endTime}`,
       startDateTime: MSGraph.getTimestamp(event.start.dateTime),
-      // endDateTime: MSGraph.getTimestamp(event.end.dateTime), ← endDateTime + cleaningTime
-      endDateTime: endDateTime,
-      cleaningTime: cleaningTime,
+      endDateTime: endDateTime, // 清掃時間減算済み
+      cleaningTime: cleaningTime, // 清掃時間
       roomName: event.location.displayName, //表での表示用
       roomStatus: locations[first].status, // 表での表示用
       reservationName: author.emailAddress.name,
