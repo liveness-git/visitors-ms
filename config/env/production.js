@@ -47,8 +47,8 @@ module.exports = {
      *                                                                          *
      ***************************************************************************/
     default: {
-      // adapter: 'sails-mysql',
-      // url: 'mysql://user:password@host:port/database',
+      adapter: "sails-mongo",
+      url: "mongodb://localhost:27017/visitors",
       //--------------------------------------------------------------------------
       //  /\   To avoid checking it in to version control, you might opt to set
       //  ||   sensitive credentials like `url` using an environment variable.
@@ -365,7 +365,8 @@ module.exports = {
     timezone: "", // 国内なら"Asia/Tokyo"
     isOwnerMode: true, // イベント登録を代表アカウントで一括して行う場合
     isCreatedOnly: false, // visitlistに表示するデータ：作成会議のみ→true、参加会議も含める→false
-    cleaningMinute: 15, // 清掃オプション加算時間(分)
+    cleaningMinute: 15, // 清掃オプション加算時間(分) ***ver.1.0.3
+    getDefaultOfContactAddr: undefined, // 連絡先デフォルト値の設定関数(user:GraphAPIのUser情報):string => void。設定しない場合undefined ***ver.1.0.3
   },
 
   appUrl: "",
