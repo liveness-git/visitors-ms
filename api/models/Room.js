@@ -25,6 +25,7 @@ module.exports = {
     //   inside:{ type: "boolean", defaultsTo: false },
     // }
     comment: { type: "string" },
+    cleaningOption: { type: "boolean", defaultsTo: false },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗

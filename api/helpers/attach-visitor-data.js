@@ -1,3 +1,5 @@
+const moment = require("moment-timezone");
+
 module.exports = {
   friendlyName: "Attach visitor data",
 
@@ -26,11 +28,21 @@ module.exports = {
     const event = inputs.event;
     const startDate = MSGraph.getDateFormat(event.start.dateTime);
     const startTime = MSGraph.getTimeFormat(event.start.dateTime);
-    const endTime = MSGraph.getTimeFormat(event.end.dateTime);
+
     // 会議室ごとのオブジェクトに再加工
     const locations = await MSGraph.reduceLocations(event);
 
     const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
+    const room = await Room.findOne(first);
+
+    // 清掃オプション時間
+    const cleaningTime = room.cleaningOption
+      ? sails.config.visitors.cleaningMinute * 60 * 1000
+      : 0;
+
+    // 清掃時間が含まれている場合は減算
+    const endDateTime = MSGraph.getTimestamp(event.end.dateTime) - cleaningTime;
+    const endTime = moment(endDateTime).format("HH:mm");
 
     const author = sails.config.visitors.isOwnerMode
       ? { ...event.attendees[1] }
@@ -41,7 +53,8 @@ module.exports = {
       subject: event.subject,
       apptTime: `${startDate} ${startTime}-${endTime}`,
       startDateTime: MSGraph.getTimestamp(event.start.dateTime),
-      endDateTime: MSGraph.getTimestamp(event.end.dateTime),
+      endDateTime: endDateTime, // 清掃時間減算済み
+      cleaningTime: cleaningTime, // 清掃時間
       roomName: event.location.displayName, //表での表示用
       roomStatus: locations[first].status, // 表での表示用
       reservationName: author.emailAddress.name,

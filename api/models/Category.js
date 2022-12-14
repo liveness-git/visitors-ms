@@ -19,6 +19,7 @@ module.exports = {
     // name: { type: "string", required: true },
     // address: { type: "string", required: true },
     // }
+    disabledByRoom: { type: "boolean", defaultsTo: false },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗

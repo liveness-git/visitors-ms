@@ -12,6 +12,7 @@ module.exports = {
     try {
       const $ = await Category.find().sort("sort ASC");
 
+      // 公開範囲のフィルタリング
       let categories = $.filter((category) => {
         // admin権限の場合は無条件に表示
         if (req.session.user.isAdmin) {
@@ -26,8 +27,15 @@ module.exports = {
         );
       });
 
-      // locationが設定されている場合、カテゴリに紐づく会議室が該当ロケーションに存在する場合のみ表示
+      // locationが設定されている場合
       if (!!req.query.location) {
+        // 会議室別のカテゴリタブの場合、非表示カテゴリは対象から外す
+        if (req.query.tab === "byroom") {
+          categories = categories.filter(
+            (category) => !category.disabledByRoom
+          );
+        }
+        // カテゴリに紐づく会議室が該当ロケーションに存在する場合のみ表示
         categories = await filter(categories, async (category) => {
           // ロケーションの取得
           const location = await Location.findOne({ url: req.query.location });

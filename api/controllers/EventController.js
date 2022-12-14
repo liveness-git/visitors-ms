@@ -184,8 +184,16 @@ module.exports = {
         const afterStart = new Date(updateEvent.start.dateTime).getTime();
         const afterEnd = new Date(updateEvent.end.dateTime).getTime();
 
+        // 会議室ごとのオブジェクトに再加工
+        const locations = await MSGraph.reduceLocations($);
+        const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
+
         // 変更前後で時間の重複がある場合
-        if (beforeStart < afterEnd && beforeEnd > afterStart) {
+        if (
+          beforeStart < afterEnd &&
+          beforeEnd > afterStart &&
+          locations[first].status !== "declined" // 辞退の場合は対象外
+        ) {
           // 開始時刻が繰り上がっている場合
           if (beforeStart > afterStart) {
             // 開始時刻の差分をチェック
@@ -624,7 +632,7 @@ module.exports = {
                   Object.keys(event.resourcies).some(
                     (key) =>
                       item.start === event.startDateTime &&
-                      item.end === event.endDateTime &&
+                      item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
                       event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
                   )
@@ -740,7 +748,7 @@ module.exports = {
                 (event) =>
                   event &&
                   item.start === event.startDateTime &&
-                  item.end === event.endDateTime &&
+                  item.end === event.endDateTime + event.cleaningTime &&
                   event.resourcies[room.id].roomStatus === "accepted" // 会議室status=accepted のみ
               );
               delete eventsDummy[index]; // 次回検索対象から外す

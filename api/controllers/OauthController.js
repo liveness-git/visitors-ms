@@ -68,23 +68,19 @@ module.exports = {
             contactAddr: undefined,
           };
 
-          // ユーザーの連絡先を別途設定
-          const contactAddrUrl = "https://graph.microsoft.com/v1.0/contacts"; //TODO: sails.config.visitors.contactAddr
-          if (contactAddrUrl) {
+          // ユーザーの連絡先デフォルト値を設定
+          const getDefaultOfContactAddr =
+            sails.config.visitors.getDefaultOfContactAddr;
+          if (getDefaultOfContactAddr !== undefined) {
+            // ログインユーザーのユーザー情報を取得
             const $ = await MSGraph.request(
               response.accessToken,
               req.session.user.email,
               "",
-              {
-                url: contactAddrUrl,
-                method: "GET",
-                params: {
-                  $filter: `mail eq '${req.session.user.email}'`, //TODO: sails.config.visitors.contactAddr
-                },
-              }
+              { method: "GET" }
             );
-            const contacts = $.data.value;
-            req.session.user.contactAddr = contacts; //TODO: sails.config.visitors.contactAddr
+            const user = $.data;
+            req.session.user.contactAddr = getDefaultOfContactAddr(user);
           }
 
           // 代表アカウントも同時に設定

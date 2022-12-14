@@ -77,7 +77,8 @@ module.exports = {
         req.session.user.email,
         Number(req.query.start),
         Number(req.query.end),
-        rooms.map((room) => room.email)
+        rooms.map((room) => room.email),
+        true
       );
       const result = rooms.filter((room) => {
         const $ = available.filter((av) => av === room.email);
