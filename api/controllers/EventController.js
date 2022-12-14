@@ -137,7 +137,7 @@ module.exports = {
 
       // 更新分フィールドのみ抽出
       const params = MSGraph.pickDirtyFields(updateEvent, dirtyFields);
-      sails.log.debug("変更分抽出：", params);
+      // sails.log.debug("変更分抽出：", params);// TODO: debug
 
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
