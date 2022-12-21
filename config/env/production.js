@@ -353,7 +353,6 @@ module.exports = {
   },
 
   visitors: {
-    systemName: "LIVENESS Visitors for Microsoft",
     credential: {
       tenant_id: "",
       client_id: "",
