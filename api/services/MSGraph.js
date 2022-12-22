@@ -72,9 +72,9 @@ module.exports = {
     // TODO: リクエスト前にtimezoneをUTCに変換 ⇒ 結果を日本時間に戻して返す。
 
     const strDateTimeTail = ".0000000";
-    const timezoneDiff = 9 * 60 * 60 * 1000;
+    const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
 
-    // timezone: 日本時間 ⇒ UTC
+    // timezone ⇒ UTC
     const startTimestamp =
       MSGraph.getTimestamp(data.startTime.dateTime + strDateTimeTail) -
       timezoneDiff;
@@ -99,7 +99,7 @@ module.exports = {
     const result = await MSGraph.request(accessToken, email, path, options);
     // return result.data.value;
 
-    // timezone: UTC ⇒ 日本時間
+    // UTC ⇒ timezone
     const newResult = result.data.value.map((item) => {
       const newItem = _.cloneDeep(item);
       newItem.scheduleItems = item.scheduleItems.map((schedule) => {
