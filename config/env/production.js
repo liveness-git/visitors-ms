@@ -363,6 +363,7 @@ module.exports = {
       redirectUri: "",
     },
     timezone: "", // 国内なら"Asia/Tokyo"
+    timezoneDiff: 0, // 国内なら9
     isOwnerMode: true, // イベント登録を代表アカウントで一括して行う場合
     isCreatedOnly: false, // visitlistに表示するデータ：作成会議のみ→true、参加会議も含める→false
     cleaningMinute: 15, // 清掃オプション加算時間(分) ***ver.1.0.3
