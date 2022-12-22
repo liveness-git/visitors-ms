@@ -68,16 +68,58 @@ module.exports = {
   },
 
   getSchedule: async (accessToken, email, data) => {
+    // TODO: calendar/getScheduleのGraphAPI、３か月先以降の予定がtimezone絡みでおかしくなるため
+    // TODO: リクエスト前にtimezoneをUTCに変換 ⇒ 結果を日本時間に戻して返す。
+
+    const strDateTimeTail = ".0000000";
+    const timezoneDiff = 9 * 60 * 60 * 1000;
+
+    // timezone: 日本時間 ⇒ UTC
+    const startTimestamp =
+      MSGraph.getTimestamp(data.startTime.dateTime + strDateTimeTail) -
+      timezoneDiff;
+    const endTimestamp =
+      MSGraph.getTimestamp(data.endTime.dateTime + strDateTimeTail) -
+      timezoneDiff;
+
+    const remake = _.cloneDeep(data);
+    remake.startTime.dateTime = MSGraph.getGraphDateTime(startTimestamp);
+    remake.startTime.timeZone = "utc";
+    remake.endTime.dateTime = MSGraph.getGraphDateTime(endTimestamp);
+    remake.endTime.timeZone = "utc";
+
     const path = "calendar/getSchedule";
     const options = {
       method: "POST",
-      data: data,
-      headers: {
-        Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
-      },
+      data: remake,
+      // headers: {
+      //   Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
+      // },
     };
     const result = await MSGraph.request(accessToken, email, path, options);
-    return result.data.value;
+    // return result.data.value;
+
+    // timezone: UTC ⇒ 日本時間
+    const newResult = result.data.value.map((item) => {
+      const newItem = _.cloneDeep(item);
+      newItem.scheduleItems = item.scheduleItems.map((schedule) => {
+        const start =
+          MSGraph.getTimestamp(schedule.start.dateTime) + timezoneDiff;
+        const end = MSGraph.getTimestamp(schedule.end.dateTime) + timezoneDiff;
+
+        const newSchedule = _.cloneDeep(schedule);
+        newSchedule.start.dateTime =
+          MSGraph.getGraphDateTime(start) + strDateTimeTail;
+        newSchedule.start.timeZone = "Tokyo Standard Time";
+        newSchedule.end.dateTime =
+          MSGraph.getGraphDateTime(end) + strDateTimeTail;
+        newSchedule.end.timeZone = "Tokyo Standard Time";
+
+        return newSchedule;
+      });
+      return newItem;
+    });
+    return newResult;
   },
 
   // 引数のroomEmail配列から予約可能なemailのみに絞り込んで返す
