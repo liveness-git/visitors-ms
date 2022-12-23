@@ -66,22 +66,34 @@ module.exports = {
               ),
             localAccountId: response.account.localAccountId,
             contactAddr: undefined,
+            entity: undefined,
           };
 
-          // ユーザーの連絡先デフォルト値を設定
+          // ログインユーザーのユーザー情報を取得
+          const $ = await MSGraph.request(
+            response.accessToken,
+            req.session.user.email,
+            "",
+            {
+              method: "GET",
+              params: {
+                $select:
+                  "businessPhones,displayName,givenName,jobTitle,mobilePhone,officeLocation,preferredLanguage,surname,userPrincipalName,id,department",
+              },
+            }
+          );
+          const user = $.data;
+          delete user["@odata.context"];
+
+          // ユーザーの連絡先デフォルト値が設定されてる場合
           const getDefaultOfContactAddr =
             sails.config.visitors.getDefaultOfContactAddr;
           if (getDefaultOfContactAddr !== undefined) {
-            // ログインユーザーのユーザー情報を取得
-            const $ = await MSGraph.request(
-              response.accessToken,
-              req.session.user.email,
-              "",
-              { method: "GET" }
-            );
-            const user = $.data;
-            req.session.user.contactAddr = getDefaultOfContactAddr(user);
+            req.session.user.contactAddr = getDefaultOfContactAddr(user); // セッションに保存
           }
+
+          // graphAPIのユーザー情報をセッションに保存
+          req.session.user.entity = _.cloneDeep(user);
 
           // 代表アカウントも同時に設定
           const localAccountId = await MSAuth.acquireOwnerAccountId();
