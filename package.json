@@ -20,7 +20,9 @@
     "sails-hook-orm": "^4.0.0",
     "sails-hook-sockets": "^2.0.0",
     "sails-mongo": "^1.2.0",
-    "winser": "^1.0.3"
+    "triple-beam": "^1.3.0",
+    "winser": "^1.0.3",
+    "winston": "^3.8.2"
   },
   "devDependencies": {
     "eslint": "5.16.0"
