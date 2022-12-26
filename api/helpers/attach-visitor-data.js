@@ -123,6 +123,7 @@ module.exports = {
       checkIn: "",
       checkOut: "",
       visitorCardNumber: "",
+      reservationInfo: undefined,
       lastUpdated: 0,
       seriesMasterId: event.seriesMasterId ? event.seriesMasterId : undefined,
       recurrence: event.recurrence ? event.recurrence : undefined,
@@ -149,6 +150,9 @@ module.exports = {
       result.checkIn = visitor.checkIn;
       result.checkOut = visitor.checkOut;
       result.visitorCardNumber = visitor.visitorCardNumber;
+      result.reservationInfo = !!visitor.reservationInfo
+        ? visitor.reservationInfo
+        : undefined;
       result.lastUpdated = visitor.updatedAt;
     }
     return exits.success(result);

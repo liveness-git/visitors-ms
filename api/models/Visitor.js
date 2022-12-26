@@ -45,6 +45,11 @@ module.exports = {
     },
     seriesMasterICalUId: { type: "string" }, // 定期イベントのInstancesのみ
 
+    reservationInfo: { type: "json" }, // 作成時にmongo側に保存した作成者情報
+    // ↑ の中身は以下の通り
+    // officeLocation: { type: "string" },
+    // department: { type: "string" },
+
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
     //  ╚═╝╩ ╩╚═╝╚═╝═╩╝╚═╝

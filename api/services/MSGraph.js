@@ -362,7 +362,8 @@ module.exports = {
     bodyHtml += `<br/>\r\n`;
     bodyHtml += `------------------------------------------------------------`;
     bodyHtml += `<br/>\r\n`;
-    bodyHtml += `これは「LIVENESS Visitors for Microsoft」を使用して処理された予定です。以下リンクから起動できます。`;
+    // bodyHtml += `これは「LIVENESS Visitors for Microsoft」を使用して処理された予定です。以下リンクから起動できます。`;
+    bodyHtml += `これは「Visitors」を使用して処理された予定です。以下リンクから起動できます。`;
     bodyHtml += `<br/>\r\n`;
     bodyHtml += `<a href='${linkUrl}'>${linkUrl}</a>\r\n`;
     bodyHtml += `</div>\r\n`;

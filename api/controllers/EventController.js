@@ -84,6 +84,10 @@ module.exports = {
         ),
         comment: data.comment,
         contactAddr: data.contactAddr,
+        reservationInfo: {
+          officeLocation: req.session.user.entity.officeLocation,
+          department: req.session.user.entity.department,
+        },
       };
 
       // visitor登録
