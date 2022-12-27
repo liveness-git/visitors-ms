@@ -480,6 +480,7 @@ module.exports = {
 
   // 指定した予約の会議室が空いているかチェック
   isAvailableRooms: async (
+    isAdmin,
     accessToken,
     email,
     event,
@@ -490,6 +491,18 @@ module.exports = {
     const startTimestamp = new Date(event.start.dateTime).getTime();
     const endTimestamp = new Date(event.end.dateTime).getTime();
     const rooms = event.attendees.filter(($) => $.type === "resource");
+    const room = await Room.findOne({ email: rooms[0].emailAddress.address }); // TODO:複数会議室未対応
+
+    // 管理者以外は予約可能日数外の会議室予約は予約NG
+    if (
+      !isAdmin &&
+      !(await sails.helpers.isWithinAvailableDays(room, new Date(endTimestamp)))
+    ) {
+      const dateErrCode = "visitdialog.form.error.reservation-period";
+      errors.startTime = [dateErrCode];
+      errors.endTime = [dateErrCode];
+      return [false, errors]; //result NG
+    }
 
     const start = startDiff ? startDiff : startTimestamp;
     const end = endDiff ? endDiff : endTimestamp;
