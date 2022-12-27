@@ -42,7 +42,6 @@ module.exports = {
       // 空き時間チェック
       if (!data.recurrence) {
         const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
-          req.session.user.isAdmin,
           accessToken,
           req.session.user.email,
           event
@@ -204,7 +203,6 @@ module.exports = {
             // 開始時刻の差分をチェック
             const [isAvailable1, errAvailable1] =
               await MSGraph.isAvailableRooms(
-                req.session.user.isAdmin,
                 accessToken,
                 req.session.user.email,
                 updateEvent,
@@ -220,7 +218,6 @@ module.exports = {
             // 終了時刻の差分をチェック
             const [isAvailable2, errAvailable2] =
               await MSGraph.isAvailableRooms(
-                req.session.user.isAdmin,
                 accessToken,
                 req.session.user.email,
                 updateEvent,
@@ -234,7 +231,6 @@ module.exports = {
         } else {
           // 通常の空き時間チェック
           const [isAvailable, errAvailable] = await MSGraph.isAvailableRooms(
-            req.session.user.isAdmin,
             accessToken,
             req.session.user.email,
             updateEvent
