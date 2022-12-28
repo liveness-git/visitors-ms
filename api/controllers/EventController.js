@@ -23,6 +23,7 @@ module.exports = {
       const [event, errors] = await MSGraph.generateEventData(data, {
         name: req.session.user.name,
         email: req.session.user.email,
+        isAdmin: req.session.user.isAdmin,
       });
 
       // 入力エラーの場合
@@ -132,6 +133,7 @@ module.exports = {
       const [updateEvent, errors] = await MSGraph.generateEventData(data, {
         name: data.mailto.authors[0].name,
         email: data.mailto.authors[0].address,
+        isAdmin: req.session.user.isAdmin,
       });
 
       // 入力エラーの場合

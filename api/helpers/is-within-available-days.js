@@ -22,21 +22,16 @@ module.exports = {
     let result = false;
 
     if (!inputs.room.reservationPeriod) {
-      // 予約可能日数の指定がない場合
+      // 予約可能日数の指定がない場合、予約可能
       result = true;
     } else {
-      // 予約可能日数の指定がある場合
-
-      // 予約制限日時を算出する
+      // 予約可能日数の指定がある場合、予約制限日時を算出して判断
       const limitOver = moment()
         .startOf("date")
         .add(inputs.room.reservationPeriod, "d");
 
       // limitOver > endDateTime
       result = limitOver.isAfter(moment(inputs.endDateTime));
-      sails.log.debug("limitOver:", limitOver.format());
-      sails.log.debug("endtime:", moment(inputs.endDateTime).format());
-      sails.log.debug("result:", limitOver.isAfter(moment(inputs.endDateTime)));
     }
 
     return exits.success(result);
