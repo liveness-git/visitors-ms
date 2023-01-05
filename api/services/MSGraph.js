@@ -322,6 +322,17 @@ module.exports = {
 
     // エラーチェック------
     const errors = {};
+
+    // 管理者以外の場合、予約可能日数外はエラー
+    if (
+      !author.isAdmin &&
+      !(await sails.helpers.isWithinAvailableDays(room, new Date(data.endTime))) // 清掃オプション時間は含まない
+    ) {
+      const dateErrCode = "visitdialog.form.error.reservation-period";
+      errors.startTime = [dateErrCode];
+      errors.endTime = [dateErrCode];
+    }
+
     if (!!Object.keys(errors).length) {
       return [{}, errors];
     }

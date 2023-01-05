@@ -32,7 +32,7 @@ module.exports = {
       const $rooms = await Room.find(criteria).sort("sort ASC");
 
       // 会議室一覧(仮)からカテゴリの表示権限による絞り込み
-      const rooms = await filter($rooms, async (room) => {
+      let rooms = await filter($rooms, async (room) => {
         // 特定会議室と同一カテゴリの会議室だけ集める場合
         if (!!req.query.samecategory) {
           const targetRoom = await Room.findOne(req.query.samecategory);
@@ -66,6 +66,16 @@ module.exports = {
       }
 
       // 空き時間検索
+      // 管理者以外は予約可能日数内の会議室のみに絞り込む
+      if (!req.session.user.isAdmin) {
+        rooms = await filter(rooms, async (room) => {
+          return await sails.helpers.isWithinAvailableDays(
+            room,
+            new Date(Number(req.query.end))
+          );
+        });
+      }
+
       // msalから有効なaccessToken取得
       const accessToken = await MSAuth.acquireToken(
         req.session.user.localAccountId
