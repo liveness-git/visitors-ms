@@ -4,7 +4,7 @@ const { reduce } = require("p-iteration");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
 const visitorsSelecter =
-  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence";
+  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
 
 module.exports = {
   baseUrl,
@@ -417,6 +417,12 @@ module.exports = {
       ],
     };
 
+    // online会議の場合(GraphAPIの仕様により、一度設定したら解除不可)
+    if (data.withTeams) {
+      event.isOnlineMeeting = true;
+      event.onlineMeetingProvider = "teamsForBusiness";
+    }
+
     // 定期イベントの場合
     if (!!data.recurrence) {
       // rangeオブジェクト作成
@@ -481,7 +487,11 @@ module.exports = {
           } else {
             result["recurrence"] = null; // 定期イベントの解除はnullをセット
           }
-
+          break;
+        case "withTeams":
+          result["isOnlineMeeting"] = updateEvent["isOnlineMeeting"];
+          result["onlineMeetingProvider"] =
+            updateEvent["onlineMeetingProvider"];
           break;
         default:
       }

@@ -128,6 +128,7 @@ module.exports = {
       seriesMasterId: event.seriesMasterId ? event.seriesMasterId : undefined,
       recurrence: event.recurrence ? event.recurrence : undefined,
       eventType: event.type,
+      withTeams: event.isOnlineMeeting ? true : false,
     };
 
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
