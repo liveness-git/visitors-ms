@@ -52,6 +52,7 @@ module.exports = {
       endDateTime: moment(inputs.endTimestamp).format(),
       $orderBy: "start/dateTime",
       $select: MSGraph.visitorsSelecter,
+      $top: sails.config.visitors.calendarViewCount,
     };
     // filterの設定
     if (inputs.categoriesFilter) {

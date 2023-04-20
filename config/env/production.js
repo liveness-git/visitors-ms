@@ -368,6 +368,7 @@ module.exports = {
     isCreatedOnly: false, // visitlistに表示するデータ：作成会議のみ→true、参加会議も含める→false
     cleaningMinute: 15, // 清掃オプション加算時間(分) ***ver.1.0.3
     getDefaultOfContactAddr: undefined, // 連絡先デフォルト値の設定関数(user:GraphAPIのUser情報):string => void。設定しない場合undefined ***ver.1.0.3
+    calendarViewCount: 500, // GraphAPIのcalendar/calendarViewリクエストで１回で取得する件数（最小値は 1、最大値は 1000） ***ver.1.2.0
   },
 
   appUrl: "",

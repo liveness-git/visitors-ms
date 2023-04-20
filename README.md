@@ -55,4 +55,4 @@
 ## ver.1.2.0 (2023/04/20)
 
 - ログイン後の初期画面を会議室別に変更。
-- GraphAPI の event 取得の際、パラメーター$select の設定を修正。
+- GraphAPI の event 取得の際、パラメーター$select,$top の設定を追加。
