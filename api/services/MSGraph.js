@@ -8,6 +8,7 @@ const visitorsSelecter =
 
 module.exports = {
   baseUrl,
+  visitorsSelecter,
 
   getEventById: async (accessToken, email, id) => {
     const path = `events/${id}`;
@@ -191,8 +192,6 @@ module.exports = {
     conditions = {
       startDateTime: moment().startOf("date").add(1, "s").format(),
       endDateTime: moment().endOf("date").format(),
-      $orderBy: "start/dateTime",
-      $select: visitorsSelecter,
     }
   ) => {
     return MSGraph.requestCalendarView(accessToken, email, conditions);

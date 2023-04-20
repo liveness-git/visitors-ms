@@ -50,6 +50,8 @@ module.exports = {
     const conditions = {
       startDateTime: moment(inputs.startTimestamp).format(),
       endDateTime: moment(inputs.endTimestamp).format(),
+      $orderBy: "start/dateTime",
+      $select: MSGraph.visitorsSelecter,
     };
     // filterの設定
     if (inputs.categoriesFilter) {
