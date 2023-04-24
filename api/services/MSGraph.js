@@ -156,18 +156,57 @@ module.exports = {
       },
       schedules: roomEmails,
       availabilityViewInterval: availabilityViewInterval.toString(),
-      $select: "scheduleId,availabilityView",
+      $select: "scheduleId,availabilityView,workingHours",
     });
+
+    // 稼働時間外予約NGの会議室一覧を取得
+    const onlyDuringWorkHours = await Room.find(); //({OnlyDuringWorkHours: true});// TODO:★★★設定戻すこと
 
     // フリースペース会議室の一覧取得
     const freespaces = await Room.find({ type: "free" });
 
     return roomEmails.filter((email) => {
+      const schedule = schedules.find((sc) => sc.scheduleId === email);
+
+      // 稼働時間外予約NG会議室を対象に、稼働時間のチェック
+      if (onlyDuringWorkHours.some((room) => room.email === email)) {
+        // 開始時間が稼働時間内か
+        const strStartDay = moment(startTimestamp).format("YYYY-MM-DD");
+        const sStartTime = MSGraph.getTimestamp(
+          strStartDay + " " + schedule.workingHours.startTime
+        );
+        const sEndTime = MSGraph.getTimestamp(
+          strStartDay + " " + schedule.workingHours.endTime
+        );
+        // 開始時間が稼働時間外の場合false
+        if (startTimestamp < sStartTime || startTimestamp > sEndTime) {
+          return false;
+        }
+
+        // 終了時間が稼働時間内か
+        const strEndDay = moment(startTimestamp).format("YYYY-MM-DD");
+        const eStartTime = MSGraph.getTimestamp(
+          strEndDay + " " + schedule.workingHours.startTime
+        );
+        const eEndTime = MSGraph.getTimestamp(
+          strEndDay + " " + schedule.workingHours.endTime
+        );
+        // 清掃オプションを考慮かつ清掃対象の会議室の場合は、清掃時間を加算した終了時間
+        const endTimestampCt =
+          isConsiderCleaning &&
+          roomCleaning.some((room) => room.email === email)
+            ? endTimestamp + cleaningTime
+            : endTimestamp;
+        // 終了時間が稼働時間外の場合false
+        if (endTimestampCt < eStartTime || endTimestampCt > eEndTime) {
+          return false;
+        }
+      }
+
       // フリースペースの場合は重複可のため、空き時間判定は不要
       if (freespaces.find((free) => free.email === email)) {
         return true;
       }
-      const schedule = schedules.find((sc) => sc.scheduleId === email);
 
       // 清掃オプションを考慮する場合
       if (isConsiderCleaning) {
