@@ -569,11 +569,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // graphAPIから各会議室の利用情報を取得
-      const $schedules = await MSGraph.getSchedule(
-        accessToken,
-        req.session.user.email,
-        {
+      const [$schedules, events] = await Promise.all([
+        // graphAPIから各会議室の利用情報を取得
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -584,27 +582,28 @@ module.exports = {
           },
           schedules: rooms.map((room) => room.email),
           $select: "scheduleId,scheduleItems",
-        }
-      );
+        }),
+        (async () => {
+          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            startTimestamp,
+            endTimestamp,
+            req.query.location
+          );
+          // GraphAPIのevent情報とVisitor情報をマージ
+          return await map($events, async (event) => {
+            return await sails.helpers.attachVisitorData(
+              event,
+              req.session.user.email,
+              req.session.user.isFront || req.session.user.isAdmin
+            );
+          });
+        })(),
+      ]);
 
-      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        startTimestamp,
-        endTimestamp,
-        req.query.location
-      );
-
-      // GraphAPIのevent情報とVisitor情報をマージ
-      const events = await map($events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          req.session.user.isFront || req.session.user.isAdmin
-        );
-      });
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
 
       // 各会議室の利用情報を再構成
@@ -674,11 +673,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // graphAPIから会議室の利用情報を取得
-      const $schedules = await MSGraph.getSchedule(
-        accessToken,
-        req.session.user.email,
-        {
+      const [$schedules, events] = await Promise.all([
+        // graphAPIから会議室の利用情報を取得
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -689,27 +686,28 @@ module.exports = {
           },
           schedules: [room.email],
           $select: "scheduleId,scheduleItems",
-        }
-      );
+        }),
+        (async () => {
+          // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            startTimestamp,
+            endTimestamp,
+            req.query.location
+          );
+          // GraphAPIのevent情報とVisitor情報をマージ
+          return await map($events, async (event) => {
+            return await sails.helpers.attachVisitorData(
+              event,
+              req.session.user.email,
+              req.session.user.isFront || req.session.user.isAdmin
+            );
+          });
+        })(),
+      ]);
 
-      // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        startTimestamp,
-        endTimestamp,
-        req.query.location
-      );
-
-      // GraphAPIのevent情報とVisitor情報をマージ
-      const events = await map($events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          req.session.user.isFront || req.session.user.isAdmin
-        );
-      });
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
 
       // 1週間分の日付配列と該当スケジュールの割り当て
