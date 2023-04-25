@@ -32,13 +32,11 @@ module.exports = {
       }
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // 空き時間チェック
       if (!data.recurrence) {
@@ -146,13 +144,11 @@ module.exports = {
       // sails.log.debug("変更分抽出：", params);// TODO: debug
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // iCalUIdからevent取得
       let $ = null;
@@ -373,13 +369,11 @@ module.exports = {
       const visitorId = data.visitorId;
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // iCalUIdからevent取得
       let $ = null;
@@ -444,13 +438,11 @@ module.exports = {
   visitInfo: async (req, res) => {
     try {
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
@@ -497,13 +489,11 @@ module.exports = {
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       let label = MSGraph.getAuthorLabel(req.session.user.email);
       if (!isCreatedOnly) {
@@ -573,13 +563,11 @@ module.exports = {
       const endTimestamp = moment(timestamp).endOf("date");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // graphAPIから各会議室の利用情報を取得
       const $schedules = await MSGraph.getSchedule(
@@ -680,13 +668,11 @@ module.exports = {
       const endTimestamp = moment(timestamp).add(7, "days").endOf("date");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // graphAPIから会議室の利用情報を取得
       const $schedules = await MSGraph.getSchedule(
