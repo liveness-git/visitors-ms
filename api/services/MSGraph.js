@@ -160,7 +160,7 @@ module.exports = {
     });
 
     // 稼働時間外予約NGの会議室一覧を取得
-    const onlyDuringWorkHours = await Room.find(); //({OnlyDuringWorkHours: true});// TODO:★★★設定戻すこと
+    const onlyDuringWorkHours = await Room.find({ onlyDuringWorkHours: true });
 
     // フリースペース会議室の一覧取得
     const freespaces = await Room.find({ type: "free" });

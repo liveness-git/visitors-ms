@@ -27,6 +27,7 @@ module.exports = {
     comment: { type: "string" },
     cleaningOption: { type: "boolean", defaultsTo: false },
     reservationPeriod: { type: "number", defaultsTo: 0 },
+    onlyDuringWorkHours: { type: "boolean", defaultsTo: false },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
