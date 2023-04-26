@@ -97,8 +97,27 @@ module.exports = {
       //   Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       // },
     };
-    const result = await MSGraph.request(accessToken, email, path, options);
-    // return result.data.value;
+
+    // data.schedulesを10件ずつに分割してgetScheduleを並列処理にする
+    const schedules = _.chunk(data.schedules, 10);
+    const request = async (schedule) => {
+      options.data.schedules = schedule;
+      return await MSGraph.request(accessToken, email, path, options);
+    };
+    const results = await Promise.all(
+      schedules.map((schedule) => request(schedule))
+    );
+    const result = {
+      data: {
+        value: results.reduce(
+          (previousValue, currentValue) =>
+            previousValue.concat(currentValue.data.value),
+          []
+        ),
+      },
+    };
+    // const result = await MSGraph.request(accessToken, email, path, options);
+    // // return result.data.value;
 
     // UTC ⇒ timezone
     const newResult = result.data.value.map((item) => {
