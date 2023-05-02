@@ -32,8 +32,7 @@ module.exports = {
       params[6] = "start,end,subject,categories,locations,attendees"; // customVisitorsSelecterを上書き
 
       return await sails.helpers.getTargetFromEvents(
-        // "rooms:created",
-        "rooms:entered", //TODO:debug★★★後で変更
+        "rooms:created",
         ...params
       );
     };
