@@ -554,7 +554,7 @@ module.exports = {
 
       // 該当会議室がない場合
       if (rooms.length === 0) {
-        return res.json({ schedules: [], events: [] });
+        return res.json({ schedules: [], events: [], lrooms: [] });
       }
 
       // 取得期間の設定
@@ -569,7 +569,7 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      const [$schedules, events] = await Promise.all([
+      const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから各会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
@@ -602,9 +602,21 @@ module.exports = {
             );
           });
         })(),
+        // LivenessRoomsで登録されたeventを取得
+        sails.helpers.getLroomsEvents(
+          [
+            ownerToken,
+            ownerEmail,
+            startTimestamp,
+            endTimestamp,
+            req.query.location,
+          ],
+          rooms.map((room) => room.email)
+        ),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
+      const lroomsDummy = _.cloneDeep(lrooms); // LivenessRooms配列Index作成用にコピー
 
       // 各会議室の利用情報を再構成
       const schedules = await map($schedules, async (schedule) => {
@@ -636,6 +648,23 @@ module.exports = {
             .filter((v) => v > -1);
         });
 
+        // 該当会議室のLivenessRooms配列Indexを保持する
+        const lroomsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = lroomsDummy.findIndex(
+                (event) =>
+                  event &&
+                  event.roomEmail === schedule.scheduleId &&
+                  item.start === event.startDateTime &&
+                  item.end === event.endDateTime
+              );
+              delete lroomsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
+
         return {
           date: startTimestamp.valueOf(),
           categoryId: room.category,
@@ -646,10 +675,11 @@ module.exports = {
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,
+          lroomsIndex: lroomsIndex,
         };
       });
 
-      return res.json({ schedules: schedules, events: events });
+      return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });

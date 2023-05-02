@@ -44,6 +44,11 @@ module.exports = {
         "対象会議室のタイプを絞り込む必要がある場合のみ指定します（rooms または free）",
       required: false,
     },
+    customVisitorsSelecter: {
+      type: "string",
+      description: "MSGraphの$selectに渡す値をカスタムしたい場合に使用する",
+      required: false,
+    },
   },
 
   fn: async function (inputs, exits) {
@@ -51,7 +56,9 @@ module.exports = {
       startDateTime: moment(inputs.startTimestamp).format(),
       endDateTime: moment(inputs.endTimestamp).format(),
       $orderBy: "start/dateTime",
-      $select: MSGraph.visitorsSelecter,
+      $select: !!inputs.customVisitorsSelecter
+        ? inputs.customVisitorsSelecter
+        : MSGraph.visitorsSelecter,
       $top: sails.config.visitors.calendarViewCount,
     };
     // filterの設定
