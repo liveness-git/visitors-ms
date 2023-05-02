@@ -23,12 +23,10 @@ module.exports = {
     const params = [...inputs.getTargetFromEventsParams];
 
     const request = async (email) => {
-      // // LivenessRoomsを表示しない場合、空配列を返す。//TODO:debug★★★後で変更
-      // if (
-      //   !(await Rooms.findOne({ email: email, displayLivenessRooms: true }))
-      // ) {
-      //   return [];
-      // }
+      // LivenessRoomsを表示しない場合、空配列を返す。
+      if (!(await Room.findOne({ email: email, displayLivenessRooms: true }))) {
+        return [];
+      }
 
       params[1] = email; // emailを会議室アドレスに上書き
       params[6] = "start,end,subject,categories,locations,attendees"; // customVisitorsSelecterを上書き
