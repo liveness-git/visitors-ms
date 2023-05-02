@@ -703,7 +703,7 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      const [$schedules, events] = await Promise.all([
+      const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
@@ -736,9 +736,21 @@ module.exports = {
             );
           });
         })(),
+        // LivenessRoomsで登録されたeventを取得
+        sails.helpers.getLroomsEvents(
+          [
+            ownerToken,
+            ownerEmail,
+            startTimestamp,
+            endTimestamp,
+            req.query.location,
+          ],
+          [room.email]
+        ),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
+      const lroomsDummy = _.cloneDeep(lrooms); // LivenessRooms配列Index作成用にコピー
 
       // 1週間分の日付配列と該当スケジュールの割り当て
       const weekly = _.range(0, 7).map(($) => {
@@ -776,6 +788,21 @@ module.exports = {
             })
             .filter((v) => v > -1);
         });
+        // 該当日のLivenessRooms配列Indexを保持する
+        const lroomsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = lroomsDummy.findIndex(
+                (event) =>
+                  event &&
+                  item.start === event.startDateTime &&
+                  item.end === event.endDateTime
+              );
+              delete lroomsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
 
         return {
           date: date.timestamp,
@@ -787,10 +814,11 @@ module.exports = {
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,
+          lroomsIndex: lroomsIndex,
         };
       });
 
-      return res.json({ schedules: schedules, events: events });
+      return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });

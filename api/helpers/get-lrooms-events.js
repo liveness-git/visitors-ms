@@ -50,7 +50,6 @@ module.exports = {
       const first = Object.keys(locations)[0]; // LivenessRoomsからの予約なので固定値
 
       return {
-        roomName: locations[first].displayName,
         roomEmail: locations[first].locationUri,
         roomStatus: locations[first].status,
         subject: event.subject,
