@@ -24,6 +24,7 @@ const requestScopes = [
   "User.Read.All",
   "Calendars.Read",
   "Calendars.ReadWrite",
+  "Calendars.Read.Shared", // add ver.1.3.0
 ]; // TODO: Azureと同じ設定
 
 const msalApp = new msal.ConfidentialClientApplication(config);

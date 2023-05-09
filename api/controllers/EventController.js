@@ -32,13 +32,11 @@ module.exports = {
       }
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // 空き時間チェック
       if (!data.recurrence) {
@@ -146,13 +144,11 @@ module.exports = {
       // sails.log.debug("変更分抽出：", params);// TODO: debug
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // iCalUIdからevent取得
       let $ = null;
@@ -373,13 +369,11 @@ module.exports = {
       const visitorId = data.visitorId;
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // iCalUIdからevent取得
       let $ = null;
@@ -444,13 +438,11 @@ module.exports = {
   visitInfo: async (req, res) => {
     try {
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
@@ -497,13 +489,11 @@ module.exports = {
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
       let label = MSGraph.getAuthorLabel(req.session.user.email);
       if (!isCreatedOnly) {
@@ -564,7 +554,7 @@ module.exports = {
 
       // 該当会議室がない場合
       if (rooms.length === 0) {
-        return res.json({ schedules: [], events: [] });
+        return res.json({ schedules: [], events: [], lrooms: [] });
       }
 
       // 取得期間の設定
@@ -573,19 +563,15 @@ module.exports = {
       const endTimestamp = moment(timestamp).endOf("date");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
-      // graphAPIから各会議室の利用情報を取得
-      const $schedules = await MSGraph.getSchedule(
-        accessToken,
-        req.session.user.email,
-        {
+      const [$schedules, events, lrooms] = await Promise.all([
+        // graphAPIから各会議室の利用情報を取得
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -596,28 +582,41 @@ module.exports = {
           },
           schedules: rooms.map((room) => room.email),
           $select: "scheduleId,scheduleItems",
-        }
-      );
+        }),
+        (async () => {
+          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            startTimestamp,
+            endTimestamp,
+            req.query.location
+          );
+          // GraphAPIのevent情報とVisitor情報をマージ
+          return await map($events, async (event) => {
+            return await sails.helpers.attachVisitorData(
+              event,
+              req.session.user.email,
+              req.session.user.isFront || req.session.user.isAdmin
+            );
+          });
+        })(),
+        // LivenessRoomsで登録されたeventを取得
+        sails.helpers.getLroomsEvents(
+          [
+            ownerToken,
+            ownerEmail,
+            startTimestamp,
+            endTimestamp,
+            req.query.location,
+          ],
+          rooms.map((room) => room.email)
+        ),
+      ]);
 
-      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        startTimestamp,
-        endTimestamp,
-        req.query.location
-      );
-
-      // GraphAPIのevent情報とVisitor情報をマージ
-      const events = await map($events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          req.session.user.isFront || req.session.user.isAdmin
-        );
-      });
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
+      const lroomsDummy = _.cloneDeep(lrooms); // LivenessRooms配列Index作成用にコピー
 
       // 各会議室の利用情報を再構成
       const schedules = await map($schedules, async (schedule) => {
@@ -649,6 +648,23 @@ module.exports = {
             .filter((v) => v > -1);
         });
 
+        // 該当会議室のLivenessRooms配列Indexを保持する
+        const lroomsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = lroomsDummy.findIndex(
+                (event) =>
+                  event &&
+                  event.roomEmail === schedule.scheduleId &&
+                  item.start === event.startDateTime &&
+                  item.end === event.endDateTime
+              );
+              delete lroomsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
+
         return {
           date: startTimestamp.valueOf(),
           categoryId: room.category,
@@ -659,10 +675,11 @@ module.exports = {
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,
+          lroomsIndex: lroomsIndex,
         };
       });
 
-      return res.json({ schedules: schedules, events: events });
+      return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
@@ -680,19 +697,15 @@ module.exports = {
       const endTimestamp = moment(timestamp).add(7, "days").endOf("date");
 
       // msalから有効なaccessToken取得
-      const accessToken = await MSAuth.acquireToken(
-        req.session.user.localAccountId
-      );
       // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(
-        req.session.owner.localAccountId
-      );
+      const [accessToken, ownerToken] = await Promise.all([
+        MSAuth.acquireToken(req.session.user.localAccountId),
+        MSAuth.acquireToken(req.session.owner.localAccountId),
+      ]);
 
-      // graphAPIから会議室の利用情報を取得
-      const $schedules = await MSGraph.getSchedule(
-        accessToken,
-        req.session.user.email,
-        {
+      const [$schedules, events, lrooms] = await Promise.all([
+        // graphAPIから会議室の利用情報を取得
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -703,28 +716,41 @@ module.exports = {
           },
           schedules: [room.email],
           $select: "scheduleId,scheduleItems",
-        }
-      );
+        }),
+        (async () => {
+          // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            startTimestamp,
+            endTimestamp,
+            req.query.location
+          );
+          // GraphAPIのevent情報とVisitor情報をマージ
+          return await map($events, async (event) => {
+            return await sails.helpers.attachVisitorData(
+              event,
+              req.session.user.email,
+              req.session.user.isFront || req.session.user.isAdmin
+            );
+          });
+        })(),
+        // LivenessRoomsで登録されたeventを取得
+        sails.helpers.getLroomsEvents(
+          [
+            ownerToken,
+            ownerEmail,
+            startTimestamp,
+            endTimestamp,
+            req.query.location,
+          ],
+          [room.email]
+        ),
+      ]);
 
-      // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-        isOwnerMode ? ownerToken : accessToken,
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        startTimestamp,
-        endTimestamp,
-        req.query.location
-      );
-
-      // GraphAPIのevent情報とVisitor情報をマージ
-      const events = await map($events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          req.session.user.isFront || req.session.user.isAdmin
-        );
-      });
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
+      const lroomsDummy = _.cloneDeep(lrooms); // LivenessRooms配列Index作成用にコピー
 
       // 1週間分の日付配列と該当スケジュールの割り当て
       const weekly = _.range(0, 7).map(($) => {
@@ -762,6 +788,21 @@ module.exports = {
             })
             .filter((v) => v > -1);
         });
+        // 該当日のLivenessRooms配列Indexを保持する
+        const lroomsIndex = scheduleItems.map((row) => {
+          return row
+            .map((item) => {
+              const index = lroomsDummy.findIndex(
+                (event) =>
+                  event &&
+                  item.start === event.startDateTime &&
+                  item.end === event.endDateTime
+              );
+              delete lroomsDummy[index]; // 次回検索対象から外す
+              return index;
+            })
+            .filter((v) => v > -1);
+        });
 
         return {
           date: date.timestamp,
@@ -773,10 +814,11 @@ module.exports = {
           usageRange: room.usageRange === "none" ? "outside" : room.usageRange,
           scheduleItems: scheduleItems,
           eventsIndex: eventsIndex,
+          lroomsIndex: lroomsIndex,
         };
       });
 
-      return res.json({ schedules: schedules, events: events });
+      return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error(err.message);
       return res.status(400).json({ errors: err.message });
