@@ -3,7 +3,7 @@ const moment = require("moment-timezone");
 module.exports = {
   friendlyName: "is within available days",
 
-  description: "指定された会議室が予約可能日数内か判定します",
+  description: "指定された会議室が予約可能かつ予約可能日数内か判定します",
 
   inputs: {
     room: {
@@ -21,7 +21,10 @@ module.exports = {
   fn: async function (inputs, exits) {
     let result = false;
 
-    if (!inputs.room.reservationPeriod) {
+    if (inputs.room.noReservations) {
+      // 予約不可の場合
+      result = false;
+    } else if (!inputs.room.reservationPeriod) {
       // 予約可能日数の指定がない場合、予約可能
       result = true;
     } else {
