@@ -111,6 +111,7 @@ module.exports = {
       }
 
       if (visitors.every((visitor) => !!visitor)) {
+        // 強制リロード用セッションON
         return res.json({ success: true });
       } else {
         throw new Error("The registration process failed.");
@@ -356,6 +357,8 @@ module.exports = {
         throw new Error("Failed to update Visitor data.");
       }
 
+      // 強制リロード用セッションON
+
       return res.json({ success: true });
     } catch (err) {
       sails.log.error(err.message);
@@ -427,6 +430,8 @@ module.exports = {
           throw new Error("Failed to delete Visitors data.");
         }
       }
+
+      // 強制リロード用セッションON
 
       return res.json({ success: true });
     } catch (err) {
