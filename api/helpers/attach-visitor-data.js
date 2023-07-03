@@ -26,6 +26,12 @@ module.exports = {
 
   fn: async function (inputs, exits) {
     const event = inputs.event;
+
+    const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
+    if (!visitor) {
+      return exits.success(undefined);
+    }
+
     const startDate = MSGraph.getDateFormat(event.start.dateTime);
     const startTime = MSGraph.getTimeFormat(event.start.dateTime);
 
@@ -131,31 +137,29 @@ module.exports = {
       withTeams: event.isOnlineMeeting ? true : false,
     };
 
-    const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
-    if (!!visitor) {
-      result.visitorId = visitor.id;
-      result.usageRange = visitor.usageRange;
-      result.visitCompany = visitor.visitCompany;
-      result.numberOfVisitor = visitor.numberOfVisitor;
-      result.numberOfEmployee = visitor.numberOfEmployee;
-      Object.keys(visitor.resourcies).map((room) => {
-        if (result.resourcies.hasOwnProperty(room)) {
-          result.resourcies[room] = {
-            ...result.resourcies[room],
-            ...visitor.resourcies[room],
-          };
-        }
-      });
-      result.comment = visitor.comment;
-      result.contactAddr = visitor.contactAddr;
-      result.checkIn = visitor.checkIn;
-      result.checkOut = visitor.checkOut;
-      result.visitorCardNumber = visitor.visitorCardNumber;
-      result.reservationInfo = !!visitor.reservationInfo
-        ? visitor.reservationInfo
-        : undefined;
-      result.lastUpdated = visitor.updatedAt;
-    }
+    result.visitorId = visitor.id;
+    result.usageRange = visitor.usageRange;
+    result.visitCompany = visitor.visitCompany;
+    result.numberOfVisitor = visitor.numberOfVisitor;
+    result.numberOfEmployee = visitor.numberOfEmployee;
+    Object.keys(visitor.resourcies).map((room) => {
+      if (result.resourcies.hasOwnProperty(room)) {
+        result.resourcies[room] = {
+          ...result.resourcies[room],
+          ...visitor.resourcies[room],
+        };
+      }
+    });
+    result.comment = visitor.comment;
+    result.contactAddr = visitor.contactAddr;
+    result.checkIn = visitor.checkIn;
+    result.checkOut = visitor.checkOut;
+    result.visitorCardNumber = visitor.visitorCardNumber;
+    result.reservationInfo = !!visitor.reservationInfo
+      ? visitor.reservationInfo
+      : undefined;
+    result.lastUpdated = visitor.updatedAt;
+
     return exits.success(result);
   },
 };
