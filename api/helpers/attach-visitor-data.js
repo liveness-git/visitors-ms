@@ -27,6 +27,7 @@ module.exports = {
   fn: async function (inputs, exits) {
     const event = inputs.event;
 
+    // Visitorsに登録されていないeventは対象外とする
     const visitor = await Visitor.findOne({ iCalUId: event.iCalUId });
     if (!visitor) {
       return exits.success(undefined);

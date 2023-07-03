@@ -522,13 +522,15 @@ module.exports = {
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          false
-        );
-      });
+      const result = (
+        await map(events, async (event) => {
+          return await sails.helpers.attachVisitorData(
+            event,
+            req.session.user.email,
+            false
+          );
+        })
+      ).filter((v) => v);
 
       // 定期的な予定が含まれる場合、ソートが崩れる為もう一度並び換える。
       result.sort((a, b) => a.startDateTime - b.startDateTime);
@@ -596,13 +598,15 @@ module.exports = {
             req.query.location
           );
           // GraphAPIのevent情報とVisitor情報をマージ
-          return await map($events, async (event) => {
-            return await sails.helpers.attachVisitorData(
-              event,
-              req.session.user.email,
-              req.session.user.isFront || req.session.user.isAdmin
-            );
-          });
+          return (
+            await map($events, async (event) => {
+              return await sails.helpers.attachVisitorData(
+                event,
+                req.session.user.email,
+                req.session.user.isFront || req.session.user.isAdmin
+              );
+            })
+          ).filter((v) => v);
         })(),
         // LivenessRoomsで登録されたeventを取得
         // sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
@@ -733,13 +737,15 @@ module.exports = {
             req.query.location
           );
           // GraphAPIのevent情報とVisitor情報をマージ
-          return await map($events, async (event) => {
-            return await sails.helpers.attachVisitorData(
-              event,
-              req.session.user.email,
-              req.session.user.isFront || req.session.user.isAdmin
-            );
-          });
+          return (
+            await map($events, async (event) => {
+              return await sails.helpers.attachVisitorData(
+                event,
+                req.session.user.email,
+                req.session.user.isFront || req.session.user.isAdmin
+              );
+            })
+          ).filter((v) => v);
         })(),
         // LivenessRoomsで登録されたeventを取得
         // sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更

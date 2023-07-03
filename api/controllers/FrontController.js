@@ -46,13 +46,15 @@ module.exports = {
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const $result = await map(events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          true
-        );
-      });
+      const $result = (
+        await map(events, async (event) => {
+          return await sails.helpers.attachVisitorData(
+            event,
+            req.session.user.email,
+            true
+          );
+        })
+      ).filter((v) => v);
 
       // 会議室status=accepted & 社外会議 のみに絞り込む(front/visitlist にも同じ処理あり)
       const result = $result.filter((event) => {
@@ -179,13 +181,15 @@ module.exports = {
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const $result = await map(events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          true
-        );
-      });
+      const $result = (
+        await map(events, async (event) => {
+          return await sails.helpers.attachVisitorData(
+            event,
+            req.session.user.email,
+            true
+          );
+        })
+      ).filter((v) => v);
 
       // 会議室status=accepted & 社外会議 のみに絞り込む(front/export にも同じ処理あり)
       const result = $result.filter((event) => {
