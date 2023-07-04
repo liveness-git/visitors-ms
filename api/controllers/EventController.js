@@ -17,7 +17,7 @@ const isCreatedOnly = sails.config.visitors.isCreatedOnly;
 // GraphAPI負荷を減らすため、一般ユーザーの場合
 // 表示画面は個人アクセストークンを利用(isOwnerModeをOFFにする)
 const isOwnerReadMode = (req) => {
-  return req.session.user.isFront || req.session.user.isAdmin ? true : false;
+  return req.session.user.isFront || req.session.user.isAdmin;
 };
 
 module.exports = {
@@ -583,6 +583,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
+      // GraphAPI負荷を減らすため、isOwnerModeを上書き
+      const isOwnerMode = isOwnerReadMode(req);
+
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから各会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
@@ -600,9 +603,6 @@ module.exports = {
         }),
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
-
-          // GraphAPI負荷を減らすため、isOwnerModeを上書き
-          const isOwnerMode = isOwnerReadMode(req);
 
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
@@ -738,6 +738,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
+      // GraphAPI負荷を減らすため、isOwnerModeを上書き
+      const isOwnerMode = isOwnerReadMode(req);
+
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
@@ -755,9 +758,6 @@ module.exports = {
         }),
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
-
-          // GraphAPI負荷を減らすため、isOwnerModeを上書き
-          const isOwnerMode = isOwnerReadMode(req);
 
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
