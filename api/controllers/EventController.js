@@ -833,7 +833,11 @@ module.exports = {
                   event &&
                   item.start === event.startDateTime &&
                   item.end === event.endDateTime + event.cleaningTime &&
-                  event.resourcies[room.id].roomStatus === "accepted" // 会議室status=accepted のみ
+                  // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                  ((isOwnerMode &&
+                    event.resourcies[room.id].roomStatus === "accepted") ||
+                    (!isOwnerMode &&
+                      event.resourcies[room.id].roomStatus !== "declined"))
               );
               delete eventsDummy[index]; // 次回検索対象から外す
               return index;
