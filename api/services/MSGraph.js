@@ -100,13 +100,19 @@ module.exports = {
 
     // data.schedulesを10件ずつに分割してgetScheduleを並列処理にする
     const schedules = _.chunk(data.schedules, 10);
-    const request = async (schedule) => {
-      options.data.schedules = schedule;
-      return await MSGraph.request(accessToken, email, path, options);
+
+    const request = async (schedule, index) => {
+      // GraphAPI負荷を減らすため、指定秒待つ
+      await new Promise((resolve) => setTimeout(resolve, index * 500));
+
+      return await MSGraph.request(accessToken, email, path, {
+        ...options,
+        data: { ...options.data, schedules: schedule },
+      });
     };
 
     const results = await Promise.all(
-      schedules.map((schedule) => request(schedule))
+      schedules.map((schedule, index) => request(schedule, index))
     );
     // 調整 *** 並列 ← await追加して直列に変更
     // const results = [];
@@ -123,8 +129,6 @@ module.exports = {
         ),
       },
     };
-    // const result = await MSGraph.request(accessToken, email, path, options);
-    // // return result.data.value;
 
     // UTC ⇒ timezone
     const newResult = result.data.value.map((item) => {

@@ -1,4 +1,4 @@
-const { map } = require("p-iteration");
+const { map, filter } = require("p-iteration");
 
 module.exports = {
   friendlyName: "get livenessRooms events",
@@ -20,14 +20,11 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
-    const params = [...inputs.getTargetFromEventsParams];
+    const request = async (email, index) => {
+      // GraphAPI負荷を減らすため、指定秒待つ
+      await new Promise((resolve) => setTimeout(resolve, index * 500));
 
-    const request = async (email) => {
-      // LivenessRoomsを表示しない場合、空配列を返す。
-      if (!(await Room.findOne({ email: email, displayLivenessRooms: true }))) {
-        return [];
-      }
-
+      const params = [...inputs.getTargetFromEventsParams];
       params[1] = email; // emailを会議室アドレスに上書き
       params[6] = "start,end,subject,categories,locations,attendees"; // customVisitorsSelecterを上書き
 
@@ -37,13 +34,20 @@ module.exports = {
       );
     };
 
+    // LivenessRoomsを表示する会議室のみを抽出
+    const roomEmails = await filter(
+      inputs.roomEmails,
+      async (email) =>
+        !!(await Room.findOne({ email: email, displayLivenessRooms: true }))
+    );
+
     const results = await Promise.all(
-      inputs.roomEmails.map((email) => request(email))
+      roomEmails.map((email, index) => request(email, index))
     );
     // 調整 *** 並列 ← await追加して直列に変更
     // const results = [];
-    // for (let i = 0; i < inputs.roomEmails.length; i++) {
-    //   results.push(await request(inputs.roomEmails[i]));
+    // for (let i = 0; i < roomEmails.length; i++) {
+    //   results.push(await request(roomEmails[i]));
     // }
 
     const $result = results.reduce((prev, cur) => prev.concat(cur), []);
