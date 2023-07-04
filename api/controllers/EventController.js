@@ -14,6 +14,12 @@ const isOwnerMode = sails.config.visitors.isOwnerMode;
 const ownerEmail = sails.config.visitors.credential.username;
 const isCreatedOnly = sails.config.visitors.isCreatedOnly;
 
+// GraphAPI負荷を減らすため、一般ユーザーの場合
+// 表示画面は個人アクセストークンを利用(isOwnerModeをOFFにする)
+const isOwnerReadMode = (req) => {
+  return req.session.user.isFront || req.session.user.isAdmin ? true : false;
+};
+
 module.exports = {
   create: async (req, res) => {
     try {
@@ -444,6 +450,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
+      // GraphAPI負荷を減らすため、isOwnerModeを上書き
+      const isOwnerMode = isOwnerReadMode(req);
+
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
         isOwnerMode ? ownerToken : accessToken,
@@ -501,8 +510,8 @@ module.exports = {
         label = MSGraph.getLocationLabel(location.id);
       }
 
-      // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
-      const isOwnerMode = false;
+      // GraphAPI負荷を減らすため、isOwnerModeを上書き
+      const isOwnerMode = isOwnerReadMode(req);
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
@@ -591,11 +600,9 @@ module.exports = {
         }),
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
-          // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
-          const isOwnerMode =
-            req.session.user.isFront || req.session.user.isAdminisOwnerMode
-              ? true
-              : false;
+
+          // GraphAPI負荷を減らすため、isOwnerModeを上書き
+          const isOwnerMode = isOwnerReadMode(req);
 
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
@@ -617,18 +624,26 @@ module.exports = {
             })
           ).filter((v) => v);
         })(),
-        // LivenessRoomsで登録されたeventを取得
-        sails.helpers.getLroomsEvents(
-          // await sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
-          [
-            ownerToken,
-            ownerEmail,
-            startTimestamp,
-            endTimestamp,
-            req.query.location,
-          ],
-          rooms.map((room) => room.email)
-        ),
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
+          // GraphAPI負荷を減らすため、一般は非対応
+          if (!(req.session.user.isFront || req.session.user.isAdmin)) {
+            return [];
+          }
+
+          // LivenessRoomsで登録されたeventを取得
+          return sails.helpers.getLroomsEvents(
+            [
+              ownerToken,
+              ownerEmail,
+              startTimestamp,
+              endTimestamp,
+              req.query.location,
+            ],
+            rooms.map((room) => room.email)
+          );
+        })(),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
@@ -655,7 +670,11 @@ module.exports = {
                       item.start === event.startDateTime &&
                       item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
-                      event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
+                      // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                      ((isOwnerMode &&
+                        event.resourcies[key].roomStatus === "accepted") ||
+                        (!isOwnerMode &&
+                          event.resourcies[key].roomStatus !== "declined"))
                   )
               );
               delete eventsDummy[index]; // 次回検索対象から外す
@@ -737,11 +756,8 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
-          // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
-          const isOwnerMode =
-            req.session.user.isFront || req.session.user.isAdminisOwnerMode
-              ? true
-              : false;
+          // GraphAPI負荷を減らすため、isOwnerModeを上書き
+          const isOwnerMode = isOwnerReadMode(req);
 
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
@@ -763,18 +779,26 @@ module.exports = {
             })
           ).filter((v) => v);
         })(),
-        // LivenessRoomsで登録されたeventを取得
-        sails.helpers.getLroomsEvents(
-          // await sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
-          [
-            ownerToken,
-            ownerEmail,
-            startTimestamp,
-            endTimestamp,
-            req.query.location,
-          ],
-          [room.email]
-        ),
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
+          // GraphAPI負荷を減らすため、一般は非対応
+          if (!(req.session.user.isFront || req.session.user.isAdmin)) {
+            return [];
+          }
+
+          // LivenessRoomsで登録されたeventを取得
+          return sails.helpers.getLroomsEvents(
+            [
+              ownerToken,
+              ownerEmail,
+              startTimestamp,
+              endTimestamp,
+              req.query.location,
+            ],
+            [room.email]
+          );
+        })(),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
