@@ -37,14 +37,14 @@ module.exports = {
       );
     };
 
+    const results = await Promise.all(
+      inputs.roomEmails.map((email) => request(email))
+    );
     // 調整 *** 並列 ← await追加して直列に変更
-    // const results = await Promise.all(
-    //   inputs.roomEmails.map((email) => request(email))
-    // );
-    const results = [];
-    for (let i = 0; i < inputs.roomEmails.length; i++) {
-      results.push(await request(inputs.roomEmails[i]));
-    }
+    // const results = [];
+    // for (let i = 0; i < inputs.roomEmails.length; i++) {
+    //   results.push(await request(inputs.roomEmails[i]));
+    // }
 
     const $result = results.reduce((prev, cur) => prev.concat(cur), []);
 

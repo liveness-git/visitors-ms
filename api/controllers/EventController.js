@@ -501,6 +501,9 @@ module.exports = {
         label = MSGraph.getLocationLabel(location.id);
       }
 
+      // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
+      const isOwnerMode = false;
+
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
         isOwnerMode ? label : "",
@@ -573,8 +576,8 @@ module.exports = {
 
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから各会議室の利用情報を取得
-        // MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
-        await MSGraph.getSchedule(accessToken, req.session.user.email, {
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
+          // await MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -586,8 +589,14 @@ module.exports = {
           schedules: rooms.map((room) => room.email),
           $select: "scheduleId,scheduleItems",
         }),
-        // (async () => {// 調整 *** 並列 ← await追加して直列に変更
-        await (async () => {
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+          // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
+          const isOwnerMode =
+            req.session.user.isFront || req.session.user.isAdminisOwnerMode
+              ? true
+              : false;
+
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
@@ -609,8 +618,8 @@ module.exports = {
           ).filter((v) => v);
         })(),
         // LivenessRoomsで登録されたeventを取得
-        // sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
-        await sails.helpers.getLroomsEvents(
+        sails.helpers.getLroomsEvents(
+          // await sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
           [
             ownerToken,
             ownerEmail,
@@ -712,8 +721,8 @@ module.exports = {
 
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから会議室の利用情報を取得
-        // MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
-        await MSGraph.getSchedule(accessToken, req.session.user.email, {
+        MSGraph.getSchedule(accessToken, req.session.user.email, {
+          // await MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -725,8 +734,15 @@ module.exports = {
           schedules: [room.email],
           $select: "scheduleId,scheduleItems",
         }),
-        // (async () => {// 調整 *** 並列 ← await追加して直列に変更
-        await (async () => {
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
+          // GraphAPI負荷を減らすため、この一覧ではisOwnerModeを上書き
+          const isOwnerMode =
+            req.session.user.isFront || req.session.user.isAdminisOwnerMode
+              ? true
+              : false;
+
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
@@ -748,8 +764,8 @@ module.exports = {
           ).filter((v) => v);
         })(),
         // LivenessRoomsで登録されたeventを取得
-        // sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
-        await sails.helpers.getLroomsEvents(
+        sails.helpers.getLroomsEvents(
+          // await sails.helpers.getLroomsEvents(// 調整 *** 並列 ← await追加して直列に変更
           [
             ownerToken,
             ownerEmail,

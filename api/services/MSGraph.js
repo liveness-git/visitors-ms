@@ -105,14 +105,14 @@ module.exports = {
       return await MSGraph.request(accessToken, email, path, options);
     };
 
+    const results = await Promise.all(
+      schedules.map((schedule) => request(schedule))
+    );
     // 調整 *** 並列 ← await追加して直列に変更
-    // const results = await Promise.all(
-    //    schedules.map((schedule) => request(schedule))
-    // );
-    const results = [];
-    for (let i = 0; i < schedules.length; i++) {
-      results.push(await request(schedules[i]));
-    }
+    // const results = [];
+    // for (let i = 0; i < schedules.length; i++) {
+    //   results.push(await request(schedules[i]));
+    // }
 
     const result = {
       data: {
