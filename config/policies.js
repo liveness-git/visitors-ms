@@ -55,8 +55,4 @@ module.exports.policies = {
     update: "isAdminUser",
     delete: "isAdminUser",
   },
-  LocalAddrbookController: {
-    "*": "isUserSignedIn",
-    import: "isAdminUser",
-  },
 };
