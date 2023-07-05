@@ -446,7 +446,7 @@ module.exports = {
 
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
-        isOwnerMode ? ownerToken : accessToken,
+        false ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         req.param("id")
       );
@@ -504,7 +504,7 @@ module.exports = {
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
         isOwnerMode ? label : "",
-        isOwnerMode ? ownerToken : accessToken,
+        false ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
@@ -522,13 +522,15 @@ module.exports = {
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
-      const result = await map(events, async (event) => {
-        return await sails.helpers.attachVisitorData(
-          event,
-          req.session.user.email,
-          false
-        );
-      });
+      const result = (
+        await map(events, async (event) => {
+          return await sails.helpers.attachVisitorData(
+            event,
+            req.session.user.email,
+            false
+          );
+        })
+      ).filter((v) => v);
 
       // 定期的な予定が含まれる場合、ソートが崩れる為もう一度並び換える。
       result.sort((a, b) => a.startDateTime - b.startDateTime);
@@ -572,6 +574,7 @@ module.exports = {
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから各会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
+          // await MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -584,35 +587,48 @@ module.exports = {
           $select: "scheduleId,scheduleItems",
         }),
         (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-            isOwnerMode ? ownerToken : accessToken,
+            false ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
             req.query.location
           );
           // GraphAPIのevent情報とVisitor情報をマージ
-          return await map($events, async (event) => {
-            return await sails.helpers.attachVisitorData(
-              event,
-              req.session.user.email,
-              req.session.user.isFront || req.session.user.isAdmin
-            );
-          });
+          return (
+            await map($events, async (event) => {
+              return await sails.helpers.attachVisitorData(
+                event,
+                req.session.user.email,
+                req.session.user.isFront || req.session.user.isAdmin
+              );
+            })
+          ).filter((v) => v);
         })(),
-        // LivenessRoomsで登録されたeventを取得
-        sails.helpers.getLroomsEvents(
-          [
-            ownerToken,
-            ownerEmail,
-            startTimestamp,
-            endTimestamp,
-            req.query.location,
-          ],
-          rooms.map((room) => room.email)
-        ),
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
+          // GraphAPI負荷を減らすため、一般は非対応
+          if (!(req.session.user.isFront || req.session.user.isAdmin)) {
+            return [];
+          }
+
+          // LivenessRoomsで登録されたeventを取得
+          return sails.helpers.getLroomsEvents(
+            [
+              ownerToken,
+              ownerEmail,
+              startTimestamp,
+              endTimestamp,
+              req.query.location,
+            ],
+            rooms.map((room) => room.email)
+          );
+        })(),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
@@ -639,7 +655,11 @@ module.exports = {
                       item.start === event.startDateTime &&
                       item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
-                      event.resourcies[key].roomStatus === "accepted" // 会議室status=accepted のみ
+                      // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                      ((isOwnerMode &&
+                        event.resourcies[key].roomStatus === "accepted") ||
+                        (!isOwnerMode &&
+                          event.resourcies[key].roomStatus !== "declined"))
                   )
               );
               delete eventsDummy[index]; // 次回検索対象から外す
@@ -706,6 +726,7 @@ module.exports = {
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
+          // await MSGraph.getSchedule(accessToken, req.session.user.email, {// 調整 *** 並列 ← await追加して直列に変更
           startTime: {
             dateTime: MSGraph.getGraphDateTime(startTimestamp),
             timeZone: MSGraph.getTimeZone(),
@@ -718,35 +739,48 @@ module.exports = {
           $select: "scheduleId,scheduleItems",
         }),
         (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-            isOwnerMode ? ownerToken : accessToken,
+            false ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
             req.query.location
           );
           // GraphAPIのevent情報とVisitor情報をマージ
-          return await map($events, async (event) => {
-            return await sails.helpers.attachVisitorData(
-              event,
-              req.session.user.email,
-              req.session.user.isFront || req.session.user.isAdmin
-            );
-          });
+          return (
+            await map($events, async (event) => {
+              return await sails.helpers.attachVisitorData(
+                event,
+                req.session.user.email,
+                req.session.user.isFront || req.session.user.isAdmin
+              );
+            })
+          ).filter((v) => v);
         })(),
-        // LivenessRoomsで登録されたeventを取得
-        sails.helpers.getLroomsEvents(
-          [
-            ownerToken,
-            ownerEmail,
-            startTimestamp,
-            endTimestamp,
-            req.query.location,
-          ],
-          [room.email]
-        ),
+        (async () => {
+          // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
+
+          // GraphAPI負荷を減らすため、一般は非対応
+          if (!(req.session.user.isFront || req.session.user.isAdmin)) {
+            return [];
+          }
+
+          // LivenessRoomsで登録されたeventを取得
+          return sails.helpers.getLroomsEvents(
+            [
+              ownerToken,
+              ownerEmail,
+              startTimestamp,
+              endTimestamp,
+              req.query.location,
+            ],
+            [room.email]
+          );
+        })(),
       ]);
 
       const eventsDummy = _.cloneDeep(events); // イベント配列Index作成用にコピー
@@ -781,7 +815,11 @@ module.exports = {
                   event &&
                   item.start === event.startDateTime &&
                   item.end === event.endDateTime + event.cleaningTime &&
-                  event.resourcies[room.id].roomStatus === "accepted" // 会議室status=accepted のみ
+                  // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                  ((isOwnerMode &&
+                    event.resourcies[room.id].roomStatus === "accepted") ||
+                    (!isOwnerMode &&
+                      event.resourcies[room.id].roomStatus !== "declined"))
               );
               delete eventsDummy[index]; // 次回検索対象から外す
               return index;
