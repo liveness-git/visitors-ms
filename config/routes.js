@@ -49,6 +49,7 @@ module.exports.routes = {
   // backend
   "GET /user/me": "UserController.me",
   "GET /user/addressbook": "UserController.addressbook",
+  "GET /localaddr/addressbook": "LocalAddrbookController.addressbook",
   "GET /room/choices": "RoomController.choices",
   "GET /location/choices": "LocationController.choices",
   "GET /location/first": "LocationController.first",
@@ -85,6 +86,7 @@ module.exports.routes = {
   "POST /category/create": "CategoryController.create",
   "POST /category/update": "CategoryController.update",
   "POST /category/delete": "CategoryController.delete",
+  "GET /localaddr/import": "LocalAddrbookController.import",
 
   // default
   "GET /:location?/": resolver,
