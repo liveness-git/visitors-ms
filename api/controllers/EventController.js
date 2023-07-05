@@ -14,12 +14,6 @@ const isOwnerMode = sails.config.visitors.isOwnerMode;
 const ownerEmail = sails.config.visitors.credential.username;
 const isCreatedOnly = sails.config.visitors.isCreatedOnly;
 
-// GraphAPI負荷を減らすため、一般ユーザーの場合
-// 表示画面は個人アクセストークンを利用(isOwnerModeをOFFにする)
-const isOwnerReadMode = (req) => {
-  return req.session.user.isFront || req.session.user.isAdmin;
-};
-
 module.exports = {
   create: async (req, res) => {
     try {
@@ -450,12 +444,9 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // GraphAPI負荷を減らすため、isOwnerModeを上書き
-      const isOwnerMode = isOwnerReadMode(req);
-
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
-        isOwnerMode ? ownerToken : accessToken,
+        false ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         req.param("id")
       );
@@ -510,13 +501,10 @@ module.exports = {
         label = MSGraph.getLocationLabel(location.id);
       }
 
-      // GraphAPI負荷を減らすため、isOwnerModeを上書き
-      const isOwnerMode = isOwnerReadMode(req);
-
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
         isOwnerMode ? label : "",
-        isOwnerMode ? ownerToken : accessToken,
+        false ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
@@ -583,9 +571,6 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // GraphAPI負荷を減らすため、isOwnerModeを上書き
-      const isOwnerMode = isOwnerReadMode(req);
-
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから各会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
@@ -607,7 +592,7 @@ module.exports = {
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-            isOwnerMode ? ownerToken : accessToken,
+            false ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
@@ -738,9 +723,6 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // GraphAPI負荷を減らすため、isOwnerModeを上書き
-      const isOwnerMode = isOwnerReadMode(req);
-
       const [$schedules, events, lrooms] = await Promise.all([
         // graphAPIから会議室の利用情報を取得
         MSGraph.getSchedule(accessToken, req.session.user.email, {
@@ -762,7 +744,7 @@ module.exports = {
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-            isOwnerMode ? ownerToken : accessToken,
+            false ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
