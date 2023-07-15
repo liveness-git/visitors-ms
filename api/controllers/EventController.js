@@ -444,9 +444,11 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
+      // memo: 個人アクセストークンで取得可能だが、共有アカウントだとlocation情報を取得する変更が発生するため
+      //       定期予定のマスタ取得(1件だけ)なので、ひとまず代表アカウントに戻しています
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
-        false ? ownerToken : accessToken,
+        isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
         req.param("id")
       );
@@ -490,9 +492,14 @@ module.exports = {
 
       // msalから有効なaccessToken取得
       // msalから有効なaccessToken取得(代表)
-      const [accessToken, ownerToken] = await Promise.all([
+      const [accessToken, ownerToken, shareToken] = await Promise.all([
         MSAuth.acquireToken(req.session.user.localAccountId),
         MSAuth.acquireToken(req.session.owner.localAccountId),
+        MSAuth.acquireToken(
+          req.session.share.filter(
+            (location) => location === req.query.location
+          ).localAccountId
+        ),
       ]);
 
       let label = MSGraph.getAuthorLabel(req.session.user.email);
@@ -504,7 +511,7 @@ module.exports = {
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
         isOwnerMode ? label : "",
-        false ? ownerToken : accessToken,
+        false ? ownerToken : shareToken, //accessToken
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
@@ -566,9 +573,14 @@ module.exports = {
 
       // msalから有効なaccessToken取得
       // msalから有効なaccessToken取得(代表)
-      const [accessToken, ownerToken] = await Promise.all([
+      const [accessToken, ownerToken, shareToken] = await Promise.all([
         MSAuth.acquireToken(req.session.user.localAccountId),
         MSAuth.acquireToken(req.session.owner.localAccountId),
+        MSAuth.acquireToken(
+          req.session.share.filter(
+            (location) => location === req.query.location
+          ).localAccountId
+        ),
       ]);
 
       const [$schedules, events, lrooms] = await Promise.all([
@@ -592,7 +604,7 @@ module.exports = {
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-            false ? ownerToken : accessToken,
+            false ? ownerToken : shareToken, //accessToken
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
@@ -718,9 +730,14 @@ module.exports = {
 
       // msalから有効なaccessToken取得
       // msalから有効なaccessToken取得(代表)
-      const [accessToken, ownerToken] = await Promise.all([
+      const [accessToken, ownerToken, shareToken] = await Promise.all([
         MSAuth.acquireToken(req.session.user.localAccountId),
         MSAuth.acquireToken(req.session.owner.localAccountId),
+        MSAuth.acquireToken(
+          req.session.share.filter(
+            (location) => location === req.query.location
+          ).localAccountId
+        ),
       ]);
 
       const [$schedules, events, lrooms] = await Promise.all([
@@ -744,7 +761,7 @@ module.exports = {
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-            false ? ownerToken : accessToken,
+            false ? ownerToken : shareToken, //accessToken
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
