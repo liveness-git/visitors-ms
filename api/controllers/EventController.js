@@ -497,8 +497,8 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
         MSAuth.acquireToken(
           req.session.share.filter(
-            (location) => location === req.query.location
-          ).localAccountId
+            (account) => account.location === req.query.location
+          )[0].localAccountId
         ),
       ]);
 
@@ -578,8 +578,8 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
         MSAuth.acquireToken(
           req.session.share.filter(
-            (location) => location === req.query.location
-          ).localAccountId
+            (account) => account.location === req.query.location
+          )[0].localAccountId
         ),
       ]);
 
@@ -735,8 +735,8 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
         MSAuth.acquireToken(
           req.session.share.filter(
-            (location) => location === req.query.location
-          ).localAccountId
+            (account) => account.location === req.query.location
+          )[0].localAccountId
         ),
       ]);
 
