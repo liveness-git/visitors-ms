@@ -444,8 +444,8 @@ module.exports = {
         MSAuth.acquireToken(req.session.owner.localAccountId),
       ]);
 
-      // memo: 個人アクセストークンで取得可能だが、共有アカウントだとlocation情報を取得する変更が発生するため
-      //       定期予定のマスタ取得(1件だけ)なので、ひとまず代表アカウントに戻しています
+      // memo: 個人アクセストークンで取得可能だが、共有アカウントだとlocation情報を取得するために変更が必要なため
+      //       定期的な予定全体は１件取得だけ、かつトリガーイベントも常に発生ではないので、ひとまず代表アカウントに戻しています
       // graphAPIからevent取得
       const event = await MSGraph.getEventById(
         isOwnerMode ? ownerToken : accessToken,
