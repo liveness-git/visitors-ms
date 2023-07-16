@@ -79,4 +79,31 @@ module.exports = {
         });
     }
   },
+
+  // 該当する共有アカウントのlocalAccountIdを取得
+  acquireShareAccountId: async (username, password) => {
+    // msalのトークンキャッシュ内に該当アカウントが既にあるか調べる
+    const msalTokenCache = msalApp.getTokenCache();
+    const accounts = await msalTokenCache.getAllAccounts();
+    const share = accounts.find((ac) => ac.username === username);
+
+    if (share) {
+      return share.localAccountId;
+    } else {
+      // キャッシュにない場合はOAuth認証処理して情報取得
+      const usernamePasswordRequest = {
+        scopes: MSAuth.requestScopes,
+        username: username,
+        password: password,
+      };
+      return msalApp
+        .acquireTokenByUsernamePassword(usernamePasswordRequest)
+        .then((response) => {
+          return response.account.localAccountId;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+  },
 };

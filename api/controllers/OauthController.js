@@ -6,10 +6,12 @@
  */
 
 const MSAuth = require("../services/MSAuth");
+const { map } = require("p-iteration");
 
 // Create msal application object
 const cca = MSAuth.msalApp;
 const redirectUri = sails.config.visitors.credential.redirectUri;
+const shareAccounts = [...sails.config.visitors.credential.shareAccounts];
 
 module.exports = {
   signin: async (req, res) => {
@@ -98,6 +100,19 @@ module.exports = {
           // 代表アカウントも同時に設定
           const localAccountId = await MSAuth.acquireOwnerAccountId();
           req.session.owner = { localAccountId: localAccountId };
+
+          // 共有アカウントも同時に設定
+          req.session.share = await map(shareAccounts, async (share) => {
+            const localAccountId = await MSAuth.acquireShareAccountId(
+              share.username,
+              share.password
+            );
+            return {
+              location: share.location,
+              email: share.username,
+              localAccountId: localAccountId,
+            };
+          });
 
           return res.json({ ok: true });
         })

@@ -361,6 +361,14 @@ module.exports = {
       username: "",
       password: "",
       redirectUri: "",
+      // 共有アカウントの設定。必要に応じて、配列要素{},を増やしてください ***ver.1.6.0
+      shareAccounts: [
+        {
+          location: "", // mongoに登録している Locationマスタの url と同じ値をセット
+          username: "",
+          password: "",
+        },
+      ],
     },
     timezone: "", // 国内なら"Asia/Tokyo"
     timezoneDiff: 0, // 国内なら9
