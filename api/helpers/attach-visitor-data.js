@@ -136,6 +136,7 @@ module.exports = {
       recurrence: event.recurrence ? event.recurrence : undefined,
       eventType: event.type,
       withTeams: event.isOnlineMeeting ? true : false,
+      isChangedByRooms: MSGraph.isChangedByRooms(event),
     };
 
     result.visitorId = visitor.id;

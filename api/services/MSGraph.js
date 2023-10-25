@@ -622,6 +622,10 @@ module.exports = {
   getRoomLabel: (id) => `${labelTitle}roomId is ${id}.`,
   getAuthorLabel: (email) => `${labelTitle}Created by ${email}.`,
 
+  // LIVENESS Roomsによってeventが変更されているか否か
+  isChangedByRooms: (event) =>
+    event.categories.some((cate) => cate === "rooms:changed"),
+
   // イベントのLocationから会議室のみを抽出=> 必要情報を纏めて再定義
   reduceLocations: async (event) => {
     return await reduce(
