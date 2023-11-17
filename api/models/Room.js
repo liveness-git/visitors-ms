@@ -40,6 +40,7 @@ module.exports = {
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
     location: { model: "location" },
     category: { model: "category" },
+    eventCaches: { collection: "eventcache" },
   },
 
   inputCheck: async (data) => {

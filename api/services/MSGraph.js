@@ -617,10 +617,15 @@ module.exports = {
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
   getVisitorsLabel: () => `${labelTitle}.`,
-  getLocationLabel: (id) => `${labelTitle}locationId is ${id}.`,
-  getCategoryLabel: (id) => `${labelTitle}categoryId is ${id}.`,
-  getRoomLabel: (id) => `${labelTitle}roomId is ${id}.`,
-  getAuthorLabel: (email) => `${labelTitle}Created by ${email}.`,
+  getLocationLabel: (id) => `${MSGraph.getLocationLabelBase()} ${id}.`,
+  getCategoryLabel: (id) => `${MSGraph.getCategoryLabelBase()} ${id}.`,
+  getRoomLabel: (id) => `${MSGraph.getRoomLabelBase()} ${id}.`,
+  getAuthorLabel: (email) => `${MSGraph.getAuthorLabelBase()} ${email}.`,
+
+  getLocationLabelBase: () => `${labelTitle}locationId is`,
+  getCategoryLabelBase: () => `${labelTitle}categoryId is`,
+  getRoomLabelBase: () => `${labelTitle}roomId is`,
+  getAuthorLabelBase: () => `${labelTitle}Created by`,
 
   // LIVENESS Roomsによってeventが変更されているか否か
   isChangedByRooms: (event) =>

@@ -86,6 +86,9 @@ module.exports.routes = {
   "POST /category/update": "CategoryController.update",
   "POST /category/delete": "CategoryController.delete",
 
+  // API
+  "GET /api/cache/events/save": "CacheController.saveEvents",
+
   // default
   "GET /:location?/": resolver,
   "GET /": resolver,
