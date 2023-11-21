@@ -13,14 +13,22 @@ const moment = require("moment-timezone");
 const ownerEmail = sails.config.visitors.credential.username;
 
 module.exports = {
+  /**
+   * キャッシュ全削除後、指定期間のイベントを全登録
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
   saveEvents: async (req, res) => {
     try {
       //TODO: 認証処理を追加すること
       //TODO: 認証処理を追加すること
       //TODO: 認証処理を追加すること
 
-      // 取得期間の設定
-      const timestamp = Number(req.query.timestamp);
+      // キャッシュ保持期間の設定
+      const timestamp = !!req.query.timestamp
+        ? Number(req.query.timestamp)
+        : new Date().getTime();
       const startTimestamp = moment(timestamp).startOf("date");
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
 
@@ -38,7 +46,18 @@ module.exports = {
         $filter: `categories/any(c:c eq '${MSGraph.getVisitorsLabel()}')`,
       });
 
+      // キャッシュ全削除
+      await EventCache.destroy({});
+      // 指定期間のイベントを全登録
       await MSCache.saveAllEvents(events);
+
+      // キャッシュログ作成
+      await CacheLog.create({
+        type: "event",
+        mode: "reset",
+        start: startTimestamp.toDate(),
+        end: endTimestamp.toDate(),
+      });
 
       return res.send("Hi there!");
     } catch (err) {

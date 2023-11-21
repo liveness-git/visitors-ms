@@ -1,7 +1,49 @@
 const MSGraph = require("./MSGraph");
+const moment = require("moment-timezone");
 const { forEach } = require("p-iteration");
 
 module.exports = {
+  //Eventキャッシュが現在保持している範囲
+  rageRetDateForEvent: async () => {
+    const logs = await CacheLog.find({ type: "event", mode: "reset" }).sort(
+      "createdAt DESC"
+    );
+    // キャッシュがない場合はnullを返す
+    if (logs.length === 0) {
+      return [null, null];
+    }
+
+    return [logs[0].start, logs[0].end];
+  },
+
+  //指定範囲の場合、GraphAPIへのリクエストが必要かチェックする
+  checkRequestLiveEvent: async (startTimestamp, endTimestamp) => {
+    let flag = false;
+    let startDiff;
+    let endDiff;
+
+    const [minRetDate, maxRetDate] = await MSCache.rageRetDateForEvent();
+
+    if (minRetDate === null && maxRetDate === null) {
+      // キャッシュが存在しないため全部リクエストが必要
+      flag = true;
+      startDiff = startTimestamp;
+      endDiff = endTimestamp;
+    } else if (startTimestamp.toDate() < minRetDate) {
+      // キャッシュ期間より過去のデータが必要
+      flag = true;
+      startDiff = startTimestamp;
+      endDiff = moment(minRetDate).add(-1, "seconds");
+    } else if (endTimestamp.toDate() > maxRetDate) {
+      // キャッシュ期間より未来のデータが必要
+      flag = true;
+      startDiff = moment(maxRetDate).add(1, "seconds");
+      endDiff = endTimestamp;
+    }
+
+    return [flag, startDiff, endDiff];
+  },
+
   saveAllEvents: async (events) => {
     await forEach(events, async (event) => await MSCache.saveEvent(event));
   },

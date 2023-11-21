@@ -489,7 +489,6 @@ module.exports = {
       const timestamp = Number(req.query.timestamp);
       const startTimestamp = moment(timestamp).startOf("date");
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
-
       // msalから有効なaccessToken取得
       // msalから有効なaccessToken取得(代表)
       const [accessToken, ownerToken, shareToken] = await Promise.all([
@@ -502,21 +501,47 @@ module.exports = {
         ),
       ]);
 
-      let label = MSGraph.getAuthorLabel(req.session.user.email);
-      if (!isCreatedOnly) {
-        const location = await Location.findOne({ url: req.query.location });
-        label = MSGraph.getLocationLabel(location.id);
+      const location = await Location.findOne({ url: req.query.location });
+
+      // キャッシュ抽出条件
+      const criteria = {
+        start: { ">=": startTimestamp.toDate() },
+        end: { "<=": endTimestamp.toDate() },
+        location: location.id,
+      };
+      if (isCreatedOnly) {
+        criteria.author = req.session.user.email;
       }
 
-      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-      const $events = await sails.helpers.getTargetFromEvents(
-        isOwnerMode ? label : "",
-        false ? ownerToken : shareToken, //accessToken
-        isOwnerMode ? ownerEmail : req.session.user.email,
-        startTimestamp,
-        endTimestamp,
-        req.query.location
-      );
+      // キャッシュ取得
+      const $eventCache = await EventCache.find(criteria);
+      const eventCache = $eventCache.map((item) => item.value);
+
+      // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
+      const [isRequestLive, startDiff, endDiff] =
+        await MSCache.checkRequestLiveEvent(startTimestamp, endTimestamp);
+
+      // キャッシュされていない期間も対象の場合、GraphAPIから取得
+      let eventMS = [];
+      if (isRequestLive) {
+        // categories絞り込み用のラベル選択
+        const label = isCreatedOnly
+          ? MSGraph.getAuthorLabel(criteria.author)
+          : MSGraph.getLocationLabel(criteria.location);
+
+        // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+        eventMS = await sails.helpers.getTargetFromEvents(
+          isOwnerMode ? label : "",
+          false ? ownerToken : shareToken, //accessToken
+          isOwnerMode ? ownerEmail : req.session.user.email,
+          startDiff,
+          endDiff,
+          req.query.location
+        );
+      }
+
+      // キャッシュとGraphAPIをマージ
+      const $events = [...eventCache, ...eventMS];
 
       let events = $events;
       if (isOwnerMode && !isCreatedOnly) {

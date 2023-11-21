@@ -10,11 +10,6 @@ module.exports = {
     //  ╔═╗╦═╗╦╔╦╗╦╔╦╗╦╦  ╦╔═╗╔═╗
     //  ╠═╝╠╦╝║║║║║ ║ ║╚╗╔╝║╣ ╚═╗
     //  ╩  ╩╚═╩╩ ╩╩ ╩ ╩ ╚╝ ╚═╝╚═╝
-    obtainDatetime: {
-      type: "ref",
-      columnType: "datetime",
-      required: true,
-    },
     type: {
       type: "string",
       isIn: ["event"],
