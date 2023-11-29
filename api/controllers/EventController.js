@@ -7,6 +7,7 @@
 
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
+const MSCache = require("../services/MSCache");
 const moment = require("moment-timezone");
 const { map } = require("p-iteration");
 
@@ -100,14 +101,15 @@ module.exports = {
 
       // 定期イベントの場合、複数作成
       if (!!$.recurrence) {
-        visitors.concat(
+        const [$visitors, instances] =
           await sails.helpers.createVisitorInstances(
             isOwnerMode ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             $.id,
             { ...newData, seriesMasterICalUId: $.iCalUId }
-          )
-        );
+          );
+        visitors.concat($visitors);
+        await MSCache.reflectEventForRecurrence($.id, instances); // キャッシュに反映
       }
 
       if (visitors.every((visitor) => !!visitor)) {
@@ -328,17 +330,27 @@ module.exports = {
           visitors.concat(occurrence);
         }
 
-        // インスタンス登録
+        let $visitors = [];
+        let instances = [];
+
         if (isRecreate) {
-          visitors.concat(
-            await sails.helpers.createVisitorInstances(
-              isOwnerMode ? ownerToken : accessToken,
-              isOwnerMode ? ownerEmail : req.session.user.email,
-              $.id,
-              { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
-            )
+          // インスタンス登録
+          [$visitors, instances] = await sails.helpers.createVisitorInstances(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            $.id,
+            { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
+          );
+          visitors.concat($visitors);
+        } else {
+          // インスタンス取得
+          instances = await MSGraph.getEventsBySeriesMasterId(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            $.id
           );
         }
+        await MSCache.reflectEventForRecurrence($.id, instances); // キャッシュに反映
       }
 
       // 定期イベントの解除
@@ -403,7 +415,10 @@ module.exports = {
       const event = MSGraph.deleteEvent(
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
-        $.id
+        $.id,
+        !!data.recurrence
+          ? { seriesMasterId: $.id } // 定期イベント(全体)のキャッシュ削除条件
+          : { iCalUId: $.iCalUId } // 通常・定期イベント(今回のみ)のキャッシュ削除条件
       );
       if (!event) {
         throw new Error("Failed to delete MSGraph Event data.");

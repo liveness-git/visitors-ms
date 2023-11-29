@@ -298,6 +298,7 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+    await MSCache.createEvent($.data, true); // キャッシュに反映
     return $.data;
   },
 
@@ -313,10 +314,11 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+    await MSCache.updateEvent($.data); // キャッシュに反映
     return $.data;
   },
 
-  deleteEvent: async (accessToken, email, eventId) => {
+  deleteEvent: async (accessToken, email, eventId, criteria) => {
     const path = `events/${eventId}`;
     const $ = await MSGraph.request(accessToken, email, path, {
       method: "DELETE",
@@ -324,6 +326,7 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+    await MSCache.deleteEvent(criteria); // キャッシュに反映
     return $.data || null;
   },
 

@@ -30,6 +30,7 @@ module.exports = {
       required: true,
       unique: true,
     },
+    seriesMasterId: { type: "string" },
     value: { type: "json", columnType: "array", required: true },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗

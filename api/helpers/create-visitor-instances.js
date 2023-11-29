@@ -45,6 +45,6 @@ module.exports = {
       }).fetch();
     });
 
-    return exits.success(result);
+    return exits.success([result, events]);
   },
 };

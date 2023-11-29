@@ -1,4 +1,3 @@
-const MSGraph = require("./MSGraph");
 const moment = require("moment-timezone");
 const { forEach } = require("p-iteration");
 
@@ -45,20 +44,37 @@ module.exports = {
   },
 
   saveAllEvents: async (events) => {
-    await forEach(events, async (event) => await MSCache.saveEvent(event));
+    await forEach(events, async (event) => await MSCache.createEvent(event));
   },
 
-  saveEvent: async (event) => {
+  //================================================
+  // 登録
+  createEvent: async ($event, isDateCheck = false) => {
+    // イベントの種類がseriesMasterの場合、キャッシュ対象外
+    if ($event.type === "seriesMaster") {
+      return;
+    }
+    // isDateCheck=trueの場合、イベントがキャッシュ保持期間内がチェック
+    if (isDateCheck) {
+      const [minRetDate, maxRetDate] = await MSCache.rageRetDateForEvent();
+      if (
+        new Date($event.start.dateTime) > maxRetDate ||
+        new Date($event.end.dateTime) < minRetDate
+      ) {
+        return;
+      }
+    }
+
+    const event = _.cloneDeep($event);
+
+    //  event.categoriesから各情報を取得する。
     let locationId;
     let categoryId;
     let roomId;
     let authorEmail;
-
-    //  event.categoriesから各情報を取得する。
     event.categories.forEach((item) => {
       const label = item.substring(0, item.lastIndexOf(" "));
       const value = item.slice(0, -1); // 先に末尾の.を削除しておく
-
       switch (label) {
         case MSGraph.getLocationLabelBase():
           locationId = value.replace(MSGraph.getLocationLabelBase(), "").trim();
@@ -76,18 +92,51 @@ module.exports = {
     });
 
     //mongodbに保存できないため削除
+    delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    // 登録
     await EventCache.create({
       iCalUId: event.iCalUId,
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
       author: authorEmail,
+      seriesMasterId: !!event.seriesMasterId ? event.seriesMasterId : "",
       value: event,
       location: locationId,
       category: categoryId,
       room: roomId,
     });
+  },
+
+  // 更新
+  updateEvent: async ($event) => {
+    const event = _.cloneDeep($event);
+
+    //mongodbに保存できないため削除
+    delete event["@odata.context"];
+    delete event["@odata.etag"];
+
+    await EventCache.updateOne({ iCalUId: event.iCalUId }).set({
+      start: new Date(event.start.dateTime),
+      end: new Date(event.end.dateTime),
+      value: event,
+    });
+  },
+
+  // 削除
+  deleteEvent: async (criteria) => {
+    await EventCache.destroy(criteria);
+  },
+
+  //================================================
+  // 定期イベントのinstancesからキャッシュ保存する
+  reflectEventForRecurrence: async (seriesMasterId, events) => {
+    // キャッシュから一旦全削除
+    await EventCache.destroy({ seriesMasterId: seriesMasterId });
+    // instances分をキャッシュ保存
+    await forEach(
+      events,
+      async (event) => await MSCache.createEvent(event, true)
+    );
   },
 };
