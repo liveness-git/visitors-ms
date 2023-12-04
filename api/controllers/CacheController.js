@@ -21,10 +21,6 @@ module.exports = {
    */
   saveEvents: async (req, res) => {
     try {
-      //TODO: 認証処理を追加すること
-      //TODO: 認証処理を追加すること
-      //TODO: 認証処理を追加すること
-
       // キャッシュ保持期間の設定
       const timestamp = !!req.query.timestamp
         ? Number(req.query.timestamp)

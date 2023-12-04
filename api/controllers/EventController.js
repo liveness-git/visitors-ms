@@ -641,15 +641,38 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
-          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-          const $events = await sails.helpers.getTargetFromEvents(
-            isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-            false ? ownerToken : shareToken, //accessToken
-            isOwnerMode ? ownerEmail : req.session.user.email,
+          // キャッシュ範囲内かチェック
+          const [isRequestLive] = await MSCache.checkRequestLiveEvent(
             startTimestamp,
-            endTimestamp,
-            req.query.location
+            endTimestamp
           );
+
+          let $events = [];
+
+          if (isRequestLive) {
+            // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+            $events = await sails.helpers.getTargetFromEvents(
+              isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
+              false ? ownerToken : shareToken, //accessToken
+              isOwnerMode ? ownerEmail : req.session.user.email,
+              startTimestamp,
+              endTimestamp,
+              req.query.location
+            );
+          } else {
+            // キャッシュ抽出条件
+            const criteria = {
+              start: { ">=": startTimestamp.toDate() },
+              end: { "<=": endTimestamp.toDate() },
+              location: location.id,
+              category: req.query.category,
+            };
+
+            // キャッシュ取得
+            const $eventCache = await EventCache.find(criteria);
+            $events = $eventCache.map((item) => item.value);
+          }
+
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
             await map($events, async (event) => {
@@ -707,11 +730,13 @@ module.exports = {
                       item.start === event.startDateTime &&
                       item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
-                      // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
-                      ((isOwnerMode &&
-                        event.resourcies[key].roomStatus === "accepted") ||
-                        (!isOwnerMode &&
-                          event.resourcies[key].roomStatus !== "declined"))
+                      // // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                      // ((isOwnerMode &&
+                      //   event.resourcies[key].roomStatus === "accepted") ||
+                      //   (!isOwnerMode &&
+                      //     event.resourcies[key].roomStatus !== "declined"))
+                      // キャッシュ化に伴い、無条件に辞退以外は表示
+                      event.resourcies[key].roomStatus !== "declined"
                   )
               );
               delete eventsDummy[index]; // 次回検索対象から外す
@@ -798,15 +823,38 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
-          // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
-          const $events = await sails.helpers.getTargetFromEvents(
-            isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-            false ? ownerToken : shareToken, //accessToken
-            isOwnerMode ? ownerEmail : req.session.user.email,
-            startTimestamp,
-            endTimestamp,
-            req.query.location
-          );
+          // キャッシュ抽出条件
+          const criteria = {
+            start: { ">=": startTimestamp.toDate() },
+            end: { "<=": endTimestamp.toDate() },
+            // location: location.id,
+            room: req.query.room,
+          };
+
+          // キャッシュ取得
+          const $eventCache = await EventCache.find(criteria);
+          const eventCache = $eventCache.map((item) => item.value);
+
+          // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
+          const [isRequestLive, startDiff, endDiff] =
+            await MSCache.checkRequestLiveEvent(startTimestamp, endTimestamp);
+
+          // キャッシュされていない期間も対象の場合、GraphAPIから取得
+          let eventMS = [];
+          if (isRequestLive) {
+            // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
+            eventMS = await sails.helpers.getTargetFromEvents(
+              isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
+              false ? ownerToken : shareToken, //accessToken
+              isOwnerMode ? ownerEmail : req.session.user.email,
+              startDiff,
+              endDiff,
+              req.query.location
+            );
+          }
+          // キャッシュとGraphAPIをマージ
+          const $events = [...eventCache, ...eventMS];
+
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
             await map($events, async (event) => {
@@ -872,11 +920,13 @@ module.exports = {
                   event &&
                   item.start === event.startDateTime &&
                   item.end === event.endDateTime + event.cleaningTime &&
-                  // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
-                  ((isOwnerMode &&
-                    event.resourcies[room.id].roomStatus === "accepted") ||
-                    (!isOwnerMode &&
-                      event.resourcies[room.id].roomStatus !== "declined"))
+                  // // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                  // ((isOwnerMode &&
+                  //   event.resourcies[room.id].roomStatus === "accepted") ||
+                  //   (!isOwnerMode &&
+                  //     event.resourcies[room.id].roomStatus !== "declined"))
+                  // キャッシュ化に伴い、無条件に辞退以外は表示
+                  event.resourcies[room.id].roomStatus !== "declined"
               );
               delete eventsDummy[index]; // 次回検索対象から外す
               return index;
