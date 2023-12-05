@@ -165,8 +165,15 @@ module.exports = {
 
       const location = await Location.findOne({ url: req.query.location });
 
+      // キャッシュ範囲内かチェック
+      const [isRequestLive] = await MSCache.checkRequestLiveEvent(
+        startTimestamp,
+        endTimestamp
+      );
+
       let events = [];
-      if (isOwnerMode) {
+      if (isRequestLive) {
+        // if (isOwnerMode) {
         // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
         events = await sails.helpers.getTargetFromEvents(
           MSGraph.getLocationLabel(location.id),
@@ -176,8 +183,20 @@ module.exports = {
           endTimestamp,
           req.query.location
         );
+        // } else {
+        //   // TODO: 会議室単位で取得ループ
+        // }
       } else {
-        // TODO: 会議室単位で取得ループ
+        // キャッシュ抽出条件
+        const criteria = {
+          start: { ">=": startTimestamp.toDate() },
+          end: { "<=": endTimestamp.toDate() },
+          location: location.id,
+        };
+
+        // キャッシュ取得
+        const $eventCache = await EventCache.find(criteria);
+        events = $eventCache.map((item) => item.value);
       }
 
       // GraphAPIのevent情報とVisitor情報をマージ
