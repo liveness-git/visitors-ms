@@ -28,7 +28,6 @@ module.exports = {
     author: {
       type: "string",
       required: true,
-      unique: true,
     },
     seriesMasterId: { type: "string" },
     value: { type: "json", columnType: "array", required: true },
