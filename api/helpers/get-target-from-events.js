@@ -51,11 +51,12 @@ module.exports = {
         "キャッシュ抽出条件 (期間とロケーション以外がある場合)。キャッシュ機能自体を使用しない場合、'not-used'を指定する。",
       required: false,
     },
-    customVisitorsSelecter: {
+    isLroomsEvents: {
       //8
-      type: "string",
-      description: "MSGraphの$selectに渡す値をカスタムしたい場合に使用する",
+      type: "boolean",
+      description: "LIVENESS Roomsのイベント取得時はTrue",
       required: false,
+      defaultsTo: false,
     },
     // roomType: {
     //   type: "string",
@@ -102,8 +103,8 @@ module.exports = {
         startDateTime: moment(startDiff).format(),
         endDateTime: moment(endDiff).format(),
         $orderBy: "start/dateTime",
-        $select: !!inputs.customVisitorsSelecter
-          ? inputs.customVisitorsSelecter
+        $select: inputs.isLroomsEvents
+          ? MSGraph.lroomsSelector
           : MSGraph.visitorsSelecter,
         $top: sails.config.visitors.calendarViewCount,
       };

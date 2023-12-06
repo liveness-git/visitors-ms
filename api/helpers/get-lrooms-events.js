@@ -26,10 +26,10 @@ module.exports = {
 
       const params = [...inputs.getTargetFromEventsParams];
       params[1] = email; // emailを会議室アドレスに上書き
-      params[6] = MSGraph.lroomsSelector; // customVisitorsSelecterを上書き
+      params[6] = true; // LIVENESS Roomsのイベント取得時はTrue
 
       return await sails.helpers.getTargetFromEvents(
-        "rooms:created",
+        MSGraph.getLroomsLabel(),
         ...params
       );
     };

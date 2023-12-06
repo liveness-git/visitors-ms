@@ -627,6 +627,8 @@ module.exports = {
   getRoomLabel: (id) => `${MSGraph.getRoomLabelBase()} ${id}.`,
   getAuthorLabel: (email) => `${MSGraph.getAuthorLabelBase()} ${email}.`,
 
+  getLroomsLabel: () => `rooms:created`,
+
   getLocationLabelBase: () => `${labelTitle}locationId is`,
   getCategoryLabelBase: () => `${labelTitle}categoryId is`,
   getRoomLabelBase: () => `${labelTitle}roomId is`,
