@@ -32,11 +32,19 @@ module.exports = {
       // キャッシュ期間より過去のデータが必要
       flag = true;
       startDiff = startTimestamp;
-      endDiff = moment(minRetDate).add(-1, "seconds");
+      if (endTimestamp.toDate() > minRetDate) {
+        endDiff = moment(minRetDate).add(-1, "seconds");
+      } else {
+        endDiff = endTimestamp;
+      }
     } else if (endTimestamp.toDate() > maxRetDate) {
       // キャッシュ期間より未来のデータが必要
       flag = true;
-      startDiff = moment(maxRetDate).add(1, "seconds");
+      if (startTimestamp.toDate() > maxRetDate) {
+        startDiff = startTimestamp;
+      } else {
+        startDiff = moment(maxRetDate).add(1, "seconds");
+      }
       endDiff = endTimestamp;
     }
 
