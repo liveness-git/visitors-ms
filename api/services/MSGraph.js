@@ -5,10 +5,12 @@ const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
 const visitorsSelecter =
   "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
+const lroomsSelector = "start,end,subject,categories,locations,attendees";
 
 module.exports = {
   baseUrl,
   visitorsSelecter,
+  lroomsSelector,
 
   getEventById: async (accessToken, email, id) => {
     const path = `events/${id}`;

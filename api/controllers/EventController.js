@@ -557,6 +557,7 @@ module.exports = {
 
       // キャッシュとGraphAPIをマージ
       const $events = [...eventCache, ...eventMS];
+      $events.sort((a, b) => a.startDateTime - b.startDateTime);
 
       let events = $events;
       if (isOwnerMode && !isCreatedOnly) {
@@ -692,16 +693,24 @@ module.exports = {
             return [];
           }
 
+          // LivenessRoomsを表示する会議室のみが対象
+          const roomEmails = rooms
+            .filter((room) => room.displayLivenessRooms)
+            .map((room) => room.email);
+          if (roomEmails.length === 0) {
+            return [];
+          }
+
           // LivenessRoomsで登録されたeventを取得
           return sails.helpers.getLroomsEvents(
             [
-              ownerToken,
+              shareToken,
               ownerEmail,
               startTimestamp,
               endTimestamp,
               req.query.location,
             ],
-            rooms.map((room) => room.email)
+            roomEmails
           );
         })(),
       ]);
@@ -854,6 +863,7 @@ module.exports = {
           }
           // キャッシュとGraphAPIをマージ
           const $events = [...eventCache, ...eventMS];
+          $events.sort((a, b) => a.startDateTime - b.startDateTime);
 
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
@@ -873,11 +883,15 @@ module.exports = {
           if (!(req.session.user.isFront || req.session.user.isAdmin)) {
             return [];
           }
+          // LivenessRoomsを表示する会議室のみが対象
+          if (!room.displayLivenessRooms) {
+            return [];
+          }
 
           // LivenessRoomsで登録されたeventを取得
           return sails.helpers.getLroomsEvents(
             [
-              ownerToken,
+              shareToken,
               ownerEmail,
               startTimestamp,
               endTimestamp,
