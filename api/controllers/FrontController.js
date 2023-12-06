@@ -39,7 +39,8 @@ module.exports = {
           ownerEmail,
           startTimestamp,
           endTimestamp,
-          data.location
+          data.location,
+          "not-used" //キャッシュ利用しない
         );
       } else {
         // TODO: 会議室単位で取得ループ
@@ -165,39 +166,19 @@ module.exports = {
 
       const location = await Location.findOne({ url: req.query.location });
 
-      // キャッシュ範囲内かチェック
-      const [isRequestLive] = await MSCache.checkRequestLiveEvent(
+      // if (isOwnerMode) {
+      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+      const events = await sails.helpers.getTargetFromEvents(
+        MSGraph.getLocationLabel(location.id),
+        ownerToken,
+        ownerEmail,
         startTimestamp,
-        endTimestamp
+        endTimestamp,
+        req.query.location
       );
-
-      let events = [];
-      if (isRequestLive) {
-        // if (isOwnerMode) {
-        // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-        events = await sails.helpers.getTargetFromEvents(
-          MSGraph.getLocationLabel(location.id),
-          ownerToken,
-          ownerEmail,
-          startTimestamp,
-          endTimestamp,
-          req.query.location
-        );
-        // } else {
-        //   // TODO: 会議室単位で取得ループ
-        // }
-      } else {
-        // キャッシュ抽出条件
-        const criteria = {
-          start: { ">=": startTimestamp.toDate() },
-          end: { "<=": endTimestamp.toDate() },
-          location: location.id,
-        };
-
-        // キャッシュ取得
-        const $eventCache = await EventCache.find(criteria);
-        events = $eventCache.map((item) => item.value);
-      }
+      // } else {
+      //   // TODO: 会議室単位で取得ループ
+      // }
 
       // GraphAPIのevent情報とVisitor情報をマージ
       const $result = (

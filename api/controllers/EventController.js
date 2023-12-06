@@ -504,6 +504,7 @@ module.exports = {
       const timestamp = Number(req.query.timestamp);
       const startTimestamp = moment(timestamp).startOf("date");
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
+
       // msalから有効なaccessToken取得
       // msalから有効なaccessToken取得(代表)
       const [accessToken, ownerToken, shareToken] = await Promise.all([
@@ -518,46 +519,26 @@ module.exports = {
 
       const location = await Location.findOne({ url: req.query.location });
 
+      // categories絞り込み用のラベル選択
+      const label = isCreatedOnly
+        ? MSGraph.getAuthorLabel(req.session.user.email)
+        : MSGraph.getLocationLabel(location.id);
+
       // キャッシュ抽出条件
-      const criteria = {
-        start: { ">=": startTimestamp.toDate() },
-        end: { "<=": endTimestamp.toDate() },
-        location: location.id,
-      };
-      if (isCreatedOnly) {
-        criteria.author = req.session.user.email;
-      }
+      const cacheCriteria = isCreatedOnly
+        ? { author: req.session.user.email }
+        : {};
 
-      // キャッシュ取得
-      const $eventCache = await EventCache.find(criteria);
-      const eventCache = $eventCache.map((item) => item.value);
-
-      // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
-      const [isRequestLive, startDiff, endDiff] =
-        await MSCache.checkRequestLiveEvent(startTimestamp, endTimestamp);
-
-      // キャッシュされていない期間も対象の場合、GraphAPIから取得
-      let eventMS = [];
-      if (isRequestLive) {
-        // categories絞り込み用のラベル選択
-        const label = isCreatedOnly
-          ? MSGraph.getAuthorLabel(criteria.author)
-          : MSGraph.getLocationLabel(criteria.location);
-
-        // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-        eventMS = await sails.helpers.getTargetFromEvents(
-          isOwnerMode ? label : "",
-          false ? ownerToken : shareToken, //accessToken
-          isOwnerMode ? ownerEmail : req.session.user.email,
-          startDiff,
-          endDiff,
-          req.query.location
-        );
-      }
-
-      // キャッシュとGraphAPIをマージ
-      const $events = [...eventCache, ...eventMS];
-      $events.sort((a, b) => a.startDateTime - b.startDateTime);
+      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+      const $events = await sails.helpers.getTargetFromEvents(
+        isOwnerMode ? label : "",
+        false ? ownerToken : shareToken, //accessToken
+        isOwnerMode ? ownerEmail : req.session.user.email,
+        startTimestamp,
+        endTimestamp,
+        req.query.location,
+        cacheCriteria
+      );
 
       let events = $events;
       if (isOwnerMode && !isCreatedOnly) {
@@ -642,37 +623,22 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
-          // キャッシュ範囲内かチェック
-          const [isRequestLive] = await MSCache.checkRequestLiveEvent(
+          // キャッシュ抽出条件
+          const cacheCriteria = {
+            location: location.id,
+            category: req.query.category,
+          };
+
+          // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
+            false ? ownerToken : shareToken, //accessToken
+            isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
-            endTimestamp
+            endTimestamp,
+            req.query.location,
+            cacheCriteria
           );
-
-          let $events = [];
-
-          if (isRequestLive) {
-            // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-            $events = await sails.helpers.getTargetFromEvents(
-              isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
-              false ? ownerToken : shareToken, //accessToken
-              isOwnerMode ? ownerEmail : req.session.user.email,
-              startTimestamp,
-              endTimestamp,
-              req.query.location
-            );
-          } else {
-            // キャッシュ抽出条件
-            const criteria = {
-              start: { ">=": startTimestamp.toDate() },
-              end: { "<=": endTimestamp.toDate() },
-              location: location.id,
-              category: req.query.category,
-            };
-
-            // キャッシュ取得
-            const $eventCache = await EventCache.find(criteria);
-            $events = $eventCache.map((item) => item.value);
-          }
 
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
@@ -833,37 +799,18 @@ module.exports = {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
           // キャッシュ抽出条件
-          const criteria = {
-            start: { ">=": startTimestamp.toDate() },
-            end: { "<=": endTimestamp.toDate() },
-            // location: location.id,
-            room: req.query.room,
-          };
+          const cacheCriteria = { room: req.query.room };
 
-          // キャッシュ取得
-          const $eventCache = await EventCache.find(criteria);
-          const eventCache = $eventCache.map((item) => item.value);
-
-          // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
-          const [isRequestLive, startDiff, endDiff] =
-            await MSCache.checkRequestLiveEvent(startTimestamp, endTimestamp);
-
-          // キャッシュされていない期間も対象の場合、GraphAPIから取得
-          let eventMS = [];
-          if (isRequestLive) {
-            // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
-            eventMS = await sails.helpers.getTargetFromEvents(
-              isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
-              false ? ownerToken : shareToken, //accessToken
-              isOwnerMode ? ownerEmail : req.session.user.email,
-              startDiff,
-              endDiff,
-              req.query.location
-            );
-          }
-          // キャッシュとGraphAPIをマージ
-          const $events = [...eventCache, ...eventMS];
-          $events.sort((a, b) => a.startDateTime - b.startDateTime);
+          // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
+          const $events = await sails.helpers.getTargetFromEvents(
+            isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
+            false ? ownerToken : shareToken, //accessToken
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            startTimestamp,
+            endTimestamp,
+            req.query.location,
+            cacheCriteria
+          );
 
           // GraphAPIのevent情報とVisitor情報をマージ
           return (

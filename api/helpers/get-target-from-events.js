@@ -9,74 +9,122 @@ module.exports = {
 
   inputs: {
     categoriesFilter: {
+      //1
       type: "string",
       description: "GraphAPIのcategoriesを絞り込む際のワード",
       required: false,
     },
     accessToken: {
+      //2
       type: "string",
       description: "GraphAPIに問い合わせる時のアクセストークン",
       required: true,
     },
     email: {
+      //3
       type: "string",
       description: "GraphAPIに問い合わせる時のメールアドレス",
       required: true,
     },
     startTimestamp: {
+      //4
       type: "ref",
       description: "開始日時のタイムスタンプ(moment.Moment)",
       required: true,
     },
     endTimestamp: {
+      //5
       type: "ref",
       description: "終了日時のタイムスタンプ(moment.Moment)",
       required: true,
     },
     location: {
+      //6
       type: "string",
       description: "ロケーションurl名",
       required: true,
     },
-    roomType: {
-      type: "string",
+    cacheCriteria: {
+      //7
+      type: "ref",
       description:
-        "対象会議室のタイプを絞り込む必要がある場合のみ指定します（rooms または free）",
+        "キャッシュ抽出条件 (期間とロケーション以外がある場合)。キャッシュ機能自体を使用しない場合、'not-used'を指定する。",
       required: false,
     },
     customVisitorsSelecter: {
+      //8
       type: "string",
       description: "MSGraphの$selectに渡す値をカスタムしたい場合に使用する",
       required: false,
     },
+    // roomType: {
+    //   type: "string",
+    //   description:
+    //     "対象会議室のタイプを絞り込む必要がある場合のみ指定します（rooms または free）",
+    //   required: false,
+    // },
   },
 
   fn: async function (inputs, exits) {
-    const conditions = {
-      startDateTime: moment(inputs.startTimestamp).format(),
-      endDateTime: moment(inputs.endTimestamp).format(),
-      $orderBy: "start/dateTime",
-      $select: !!inputs.customVisitorsSelecter
-        ? inputs.customVisitorsSelecter
-        : MSGraph.visitorsSelecter,
-      $top: sails.config.visitors.calendarViewCount,
-    };
-    // filterの設定
-    if (inputs.categoriesFilter) {
-      conditions[
-        "$filter"
-      ] = `categories/any(c:c eq '${inputs.categoriesFilter}')`;
-    }
-
-    // graphAPIからevent取得
-    const events = await MSGraph.getCalendarEvents(
-      inputs.accessToken,
-      inputs.email,
-      conditions
-    );
-
     // ロケーションの取得
     const location = await Location.findOne({ url: inputs.location });
+
+    let isRequestLive = true;
+    let startDiff = inputs.startTimestamp;
+    let endDiff = inputs.endTimestamp;
+    let eventCache = [];
+    let eventMS = [];
+
+    // キャッシュ利用する場合
+    if (inputs.cacheCriteria !== "not-used") {
+      // キャッシュ抽出条件
+      const criteria = {
+        start: { ">=": inputs.startTimestamp.toDate() },
+        end: { "<=": inputs.endTimestamp.toDate() },
+        location: location.id,
+        ...inputs.cacheCriteria,
+      };
+
+      // キャッシュ取得
+      const $eventCache = await EventCache.find(criteria);
+      eventCache = $eventCache.map((item) => item.value);
+
+      // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
+      [isRequestLive, startDiff, endDiff] = await MSCache.checkRequestLiveEvent(
+        inputs.startTimestamp,
+        inputs.endTimestamp
+      );
+    }
+
+    // 必要に応じてGraphAPIから取得
+    if (isRequestLive) {
+      const conditions = {
+        startDateTime: moment(startDiff).format(),
+        endDateTime: moment(endDiff).format(),
+        $orderBy: "start/dateTime",
+        $select: !!inputs.customVisitorsSelecter
+          ? inputs.customVisitorsSelecter
+          : MSGraph.visitorsSelecter,
+        $top: sails.config.visitors.calendarViewCount,
+      };
+      // filterの設定
+      if (inputs.categoriesFilter) {
+        conditions[
+          "$filter"
+        ] = `categories/any(c:c eq '${inputs.categoriesFilter}')`;
+      }
+
+      // graphAPIからevent取得
+      eventMS = await MSGraph.getCalendarEvents(
+        inputs.accessToken,
+        inputs.email,
+        conditions
+      );
+    }
+
+    // キャッシュとGraphAPIをマージ
+    const events = [...eventCache, ...eventMS];
+    events.sort((a, b) => a.startDateTime - b.startDateTime);
 
     // event情報を対象ロケーションの会議室予約のみにフィルタリング。
     const result = await filter(events, async (event) => {
@@ -94,11 +142,11 @@ module.exports = {
           email: eventLocation.locationUri,
           location: location.id,
         });
-        if (!!inputs.roomType) {
-          return !!room && room.type === inputs.roomType; // 会議室タイプの指定
-        } else {
-          return !!room;
-        }
+        // if (!!inputs.roomType) {
+        //   return !!room && room.type === inputs.roomType; // 会議室タイプの指定
+        // } else {
+        return !!room;
+        // }
       });
     });
     return exits.success(result);
