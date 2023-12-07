@@ -55,6 +55,13 @@ module.exports = {
     await forEach(events, async (event) => await MSCache.createEvent(event));
   },
 
+  saveAllRoomEvents: async (events, roomEmail) => {
+    await forEach(
+      events,
+      async (event) => await MSCache.createRoomEvent(event, roomEmail)
+    );
+  },
+
   //================================================
   // 登録
   createEvent: async ($event, isDateCheck = false) => {
@@ -146,5 +153,42 @@ module.exports = {
       events,
       async (event) => await MSCache.createEvent(event, true)
     );
+  },
+  //================================================
+  //================================================
+  // 登録(RoomEvent)
+  createRoomEvent: async ($event, email) => {
+    const event = _.cloneDeep($event);
+
+    //mongodbに保存できないため削除
+    delete event["@odata.context"];
+    delete event["@odata.etag"];
+
+    await RoomEventCache.create({
+      start: new Date(event.start.dateTime),
+      end: new Date(event.end.dateTime),
+      email: email,
+      value: event,
+    });
+  },
+
+  // 更新(RoomEvent)
+  updateRoomEvent: async ($event) => {
+    const event = _.cloneDeep($event);
+
+    //mongodbに保存できないため削除
+    delete event["@odata.context"];
+    delete event["@odata.etag"];
+
+    await RoomEventCache.updateOne({ iCalUId: event.iCalUId }).set({
+      start: new Date(event.start.dateTime),
+      end: new Date(event.end.dateTime),
+      value: event,
+    });
+  },
+
+  // 削除(RoomEvent)
+  deleteRoomEvent: async (criteria) => {
+    await RoomEventCache.destroy(criteria);
   },
 };
