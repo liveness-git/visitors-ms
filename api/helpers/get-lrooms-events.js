@@ -26,6 +26,7 @@ module.exports = {
 
       const params = [...inputs.getTargetFromEventsParams];
       params[1] = email; // emailを会議室アドレスに上書き
+      params[5] = { email: email }; // cacheCriteria用
       params[6] = true; // LIVENESS Roomsのイベント取得時はTrue
 
       return await sails.helpers.getTargetFromEvents(

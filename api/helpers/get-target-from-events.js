@@ -82,12 +82,19 @@ module.exports = {
       const criteria = {
         start: { ">=": inputs.startTimestamp.toDate() },
         end: { "<=": inputs.endTimestamp.toDate() },
-        location: location.id,
         ...inputs.cacheCriteria,
       };
+      if (!inputs.isLroomsEvents) {
+        criteria.location = location.id;
+      }
 
       // キャッシュ取得
-      const $eventCache = await EventCache.find(criteria);
+      let $eventCache;
+      if (inputs.isLroomsEvents) {
+        $eventCache = await RoomEventCache.find(criteria);
+      } else {
+        $eventCache = await EventCache.find(criteria);
+      }
       eventCache = $eventCache.map((item) => item.value);
 
       // キャッシュ以外にGraphAPIへイベント取得のリクエストが必要かチェック
@@ -95,6 +102,12 @@ module.exports = {
         inputs.startTimestamp,
         inputs.endTimestamp
       );
+
+      sails.log.debug("criteria : ", criteria); //TODO: debug
+      sails.log.debug("start : ", inputs.startTimestamp); //TODO: debug
+      sails.log.debug("end : ", inputs.endTimestamp); //TODO: debug
+      sails.log.debug("startDiff : ", startDiff); //TODO: debug
+      sails.log.debug("endDiff : ", endDiff); //TODO: debug
     }
 
     // 必要に応じてGraphAPIから取得

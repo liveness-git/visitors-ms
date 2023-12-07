@@ -625,7 +625,6 @@ module.exports = {
 
           // キャッシュ抽出条件
           const cacheCriteria = {
-            location: location.id,
             category: req.query.category,
           };
 
