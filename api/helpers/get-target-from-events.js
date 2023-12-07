@@ -104,10 +104,7 @@ module.exports = {
       );
 
       sails.log.debug("criteria : ", criteria); //TODO: debug
-      sails.log.debug("start : ", inputs.startTimestamp); //TODO: debug
-      sails.log.debug("end : ", inputs.endTimestamp); //TODO: debug
-      sails.log.debug("startDiff : ", startDiff); //TODO: debug
-      sails.log.debug("endDiff : ", endDiff); //TODO: debug
+      sails.log.debug("------------ "); //TODO: debug
     }
 
     // 必要に応じてGraphAPIから取得

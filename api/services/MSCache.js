@@ -48,6 +48,13 @@ module.exports = {
       endDiff = endTimestamp;
     }
 
+    sails.log.debug("start : ", startTimestamp); //TODO: debug
+    sails.log.debug("end : ", endTimestamp); //TODO: debug
+    sails.log.debug("minRetDate : ", minRetDate); //TODO: debug
+    sails.log.debug("maxRetDate : ", maxRetDate); //TODO: debug
+    sails.log.debug("startDiff : ", startDiff); //TODO: debug
+    sails.log.debug("endDiff : ", endDiff); //TODO: debug
+
     return [flag, startDiff, endDiff];
   },
 
