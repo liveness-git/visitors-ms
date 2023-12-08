@@ -29,8 +29,8 @@ module.exports = {
           return res.json({ url: response });
         })
         .catch((error) => {
-          sails.log.error("OauthController.signin(): ", error);
-          MSGraph.errorHandler(res, err);
+          sails.log.error("OauthController.signin()----: ", error);
+          return MSGraph.errorHandler(res, error);
         });
     } catch (err) {
       sails.log.error("OauthController.signin(): ", err.message);
@@ -120,8 +120,8 @@ module.exports = {
           return res.json({ ok: true });
         })
         .catch((error) => {
-          sails.log.error("OauthController.redirect(): ", error);
-          MSGraph.errorHandler(res, err);
+          sails.log.error("OauthController.redirect()----: ", error);
+          return MSGraph.errorHandler(res, error);
         });
     } catch (err) {
       sails.log.error("OauthController.redirect(): ", err.message);
