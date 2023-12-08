@@ -51,7 +51,7 @@ module.exports = {
       return res.json(categories);
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ body: err.message });
     }
   },
 
@@ -61,7 +61,7 @@ module.exports = {
       return res.json(result);
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ body: err.message });
     }
   },
 
@@ -85,7 +85,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ body: err.message });
     }
   },
 
@@ -109,7 +109,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ body: err.message });
     }
   },
 
@@ -133,7 +133,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ body: err.message });
     }
   },
 };
