@@ -119,7 +119,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error("EventController.create(): ", err.message);
-      return res.status(400).json({ body: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -371,7 +371,7 @@ module.exports = {
       return res.json({ success: true });
     } catch (err) {
       sails.log.error("EventController.update(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -446,7 +446,7 @@ module.exports = {
       return res.json({ success: true });
     } catch (err) {
       sails.log.error("EventController.delete(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -478,7 +478,7 @@ module.exports = {
       return res.json(result);
     } catch (err) {
       sails.log.error("EventController.visitInfo(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -494,7 +494,7 @@ module.exports = {
       return res.json({ isIncludesException: result.length > 0 });
     } catch (err) {
       sails.log.error("EventController.checkInstances(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -567,7 +567,7 @@ module.exports = {
       return res.json(result);
     } catch (err) {
       sails.log.error("EventController.visitList(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -753,7 +753,7 @@ module.exports = {
       return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error("EventController.byRoom(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -926,7 +926,7 @@ module.exports = {
       return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
       sails.log.error("EventController.byRoomWeekly(): ", err.message);
-      return res.status(400).json({ errors: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 };

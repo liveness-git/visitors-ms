@@ -83,7 +83,7 @@ module.exports = {
       return res.send("Hi there!");
     } catch (err) {
       sails.log.error("CacheController.saveEvents(): ", err.message);
-      return res.status(400).json({ body: err.message });
+      return MSGraph.errorHandler(res, err);
     }
   },
 };
