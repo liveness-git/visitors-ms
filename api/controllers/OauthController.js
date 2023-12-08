@@ -29,11 +29,11 @@ module.exports = {
           return res.json({ url: response });
         })
         .catch((error) => {
-          sails.log.error(error);
+          sails.log.error("OauthController.signin(): ", error);
           res.status(500).send(error);
         });
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error("OauthController.signin(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -120,11 +120,11 @@ module.exports = {
           return res.json({ ok: true });
         })
         .catch((error) => {
-          sails.log.error(error);
+          sails.log.error("OauthController.redirect(): ", error);
           res.status(500).send(error);
         });
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error("OauthController.redirect(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -146,7 +146,7 @@ module.exports = {
 
       return res.ok();
     } catch (err) {
-      // sails.log.error(err.message);
+      sails.log.error("OauthController.signout(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },

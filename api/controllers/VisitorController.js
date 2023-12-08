@@ -5,8 +5,6 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
-const MSGraph = require("../services/MSGraph");
-
 module.exports = {
   create: async (req, res) => {
     try {

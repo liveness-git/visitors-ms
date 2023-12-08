@@ -71,7 +71,7 @@ module.exports = {
 
       return res.json({ success: true, value: result });
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("FrontController.export(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
@@ -126,7 +126,7 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("FrontController.checkin(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
@@ -147,7 +147,7 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("FrontController.checkout(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
@@ -205,7 +205,7 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("FrontController.visitList(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },

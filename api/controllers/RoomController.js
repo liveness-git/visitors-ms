@@ -97,7 +97,7 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("RoomController.choices(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -107,7 +107,7 @@ module.exports = {
       const result = await Room.find().sort("createdAt ASC");
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("RoomController.list(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -131,7 +131,7 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("RoomController.create(): ", err.message);
       return res.status(400).json({ body: err.message });
     }
   },
@@ -155,7 +155,7 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("RoomController.update(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
@@ -179,7 +179,7 @@ module.exports = {
         throw new Error("The deletion process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
+      sails.log.error("RoomController.delete(): ", err.message);
       return res.status(400).json({ errors: err.message });
     }
   },
