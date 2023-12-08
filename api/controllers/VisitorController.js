@@ -19,7 +19,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(500).json({ errorMsg: error.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -37,7 +37,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(500).json({ errorMsg: error.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -54,7 +54,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(500).json({ errorMsg: error.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 };
