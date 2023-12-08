@@ -28,7 +28,10 @@ module.exports = {
           // 未認可の場合、認可画面urlを取得。
           return res.json({ url: response });
         })
-        .catch((error) => console.log(JSON.stringify(error)));
+        .catch((error) => {
+          sails.log.error(error);
+          res.status(500).send(error);
+        });
     } catch (err) {
       // sails.log.error(err.message);
       return res.status(400).json({ body: err.message });
@@ -117,7 +120,7 @@ module.exports = {
           return res.json({ ok: true });
         })
         .catch((error) => {
-          console.log(error);
+          sails.log.error(error);
           res.status(500).send(error);
         });
     } catch (err) {

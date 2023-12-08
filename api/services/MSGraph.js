@@ -373,7 +373,7 @@ module.exports = {
       return await Http.request(_options);
     } catch (err) {
       if (err.response.data) {
-        sails.log.error(err.response.data);
+        sails.log.error("MSGraph.request(): ", err.response.data);
       }
       throw err;
     }

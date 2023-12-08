@@ -46,7 +46,7 @@ module.exports = {
         return response.accessToken;
       })
       .catch((error) => {
-        console.log(error);
+        sails.log.error(error);
         return error;
       });
   },
@@ -75,7 +75,7 @@ module.exports = {
           return response.account.localAccountId;
         })
         .catch((error) => {
-          console.log(error);
+          sails.log.error(error);
         });
     }
   },
@@ -102,7 +102,7 @@ module.exports = {
           return response.account.localAccountId;
         })
         .catch((error) => {
-          console.log(error);
+          sails.log.error(error);
         });
     }
   },
