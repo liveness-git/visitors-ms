@@ -7,6 +7,9 @@ const visitorsSelecter =
   "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
 const lroomsSelector = "start,end,subject,categories,locations,attendees";
 
+const strDateTimeTail = ".0000000";
+const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
+
 module.exports = {
   baseUrl,
   visitorsSelecter,
@@ -73,9 +76,6 @@ module.exports = {
   getSchedule: async (accessToken, email, data) => {
     // TODO: calendar/getScheduleのGraphAPI、３か月先以降の予定がtimezone絡みでおかしくなるため
     // TODO: リクエスト前にtimezoneをUTCに変換 ⇒ 結果を日本時間に戻して返す。
-
-    const strDateTimeTail = ".0000000";
-    const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
 
     // timezone ⇒ UTC
     const startTimestamp =
@@ -316,6 +316,19 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+
+    // 時間変更を伴わない更新の場合、responseのevent情報がutcになっているため
+    // ここでtimezoneを変更しておく
+    if ($.data.start.timeZone.toLowerCase() === "utc") {
+      const start = MSGraph.getTimestamp($.data.start.dateTime) + timezoneDiff;
+      $.data.start.dateTime = MSGraph.getGraphDateTime(start) + strDateTimeTail;
+      $.data.start.timeZone = MSGraph.getTimeZone();
+    }
+    if ($.data.end.timeZone.toLowerCase() === "utc") {
+      const end = MSGraph.getTimestamp($.data.end.dateTime) + timezoneDiff;
+      $.data.end.dateTime = MSGraph.getGraphDateTime(end) + strDateTimeTail;
+      $.data.end.timeZone = MSGraph.getTimeZone();
+    }
     await MSCache.updateEvent($.data); // キャッシュに反映
     return $.data;
   },
