@@ -11,7 +11,7 @@ const MSCache = require("../services/MSCache");
 const moment = require("moment-timezone");
 const { forEach } = require("p-iteration");
 
-const ownerEmail = sails.config.visitors.credential.username;
+const cacheEmail = sails.config.visitors.credential.cacheAccount.username;
 
 module.exports = {
   /**
@@ -29,13 +29,13 @@ module.exports = {
       const startTimestamp = moment(timestamp).startOf("date");
       const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
 
-      // 代表アカウント設定
-      const localAccountId = await MSAuth.acquireOwnerAccountId();
-      // msalから有効なaccessToken取得(代表)
-      const ownerToken = await MSAuth.acquireToken(localAccountId);
+      // キャッシュ用アカウント設定
+      const localAccountId = await MSAuth.acquireCacheAccountId();
+      // msalから有効なaccessToken取得(キャッシュ用)
+      const cacheToken = await MSAuth.acquireToken(localAccountId);
 
       // graphAPIからevent取得
-      const events = await MSGraph.getCalendarEvents(ownerToken, ownerEmail, {
+      const events = await MSGraph.getCalendarEvents(cacheToken, cacheEmail, {
         startDateTime: moment(startTimestamp).format(),
         endDateTime: moment(endTimestamp).format(),
         $orderBy: "start/dateTime",
@@ -61,7 +61,7 @@ module.exports = {
       // 対象会議室分回す
       await forEach(roomEmails, async (roomEmail) => {
         // graphAPIからLIVENESS Roomsのevent取得
-        const lrooms = await MSGraph.getCalendarEvents(ownerToken, roomEmail, {
+        const lrooms = await MSGraph.getCalendarEvents(cacheToken, roomEmail, {
           startDateTime: moment(startTimestamp).format(),
           endDateTime: moment(endTimestamp).format(),
           $orderBy: "start/dateTime",

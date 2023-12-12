@@ -369,6 +369,11 @@ module.exports = {
           password: "",
         },
       ],
+      // キャッシュ用アカウントの設定。***ver.2.0
+      cacheAccount: {
+        username: "",
+        password: "",
+      },
     },
     timezone: "", // 国内なら"Asia/Tokyo"
     timezoneDiff: 0, // 国内なら9
