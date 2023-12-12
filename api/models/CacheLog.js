@@ -17,7 +17,7 @@ module.exports = {
     },
     mode: {
       type: "string",
-      isIn: ["reset", "patch"],
+      isIn: ["reset", "patch", "tracking"],
       required: true,
     },
     start: {

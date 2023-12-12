@@ -71,13 +71,13 @@ module.exports = {
 
   //================================================
   // 登録
-  createEvent: async ($event, isDateCheck = false) => {
+  createEvent: async ($event, isUserModified = false) => {
     // イベントの種類がseriesMasterの場合、キャッシュ対象外
     if ($event.type === "seriesMaster") {
       return;
     }
-    // isDateCheck=trueの場合、イベントがキャッシュ保持期間内がチェック
-    if (isDateCheck) {
+    // isUserModified=trueの場合、イベントがキャッシュ保持期間内がチェック
+    if (isUserModified) {
       const [minRetDate, maxRetDate] = await MSCache.rageRetDateForEvent();
       if (
         new Date($event.start.dateTime) > maxRetDate ||
@@ -117,7 +117,8 @@ module.exports = {
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    await EventCache.create({
+    // キャッシュ登録
+    const cache = await EventCache.create({
       iCalUId: event.iCalUId,
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
@@ -127,34 +128,51 @@ module.exports = {
       location: locationId,
       category: categoryId,
       room: roomId,
-    });
+    }).fetch();
+
+    // トラッキング追加
+    if (isUserModified) {
+      await MSCache.createEventCacheTracking(cache);
+    }
   },
 
   // 更新
-  updateEvent: async ($event) => {
+  updateEvent: async ($event, isUserModified = false) => {
     const event = _.cloneDeep($event);
 
     //mongodbに保存できないため削除
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    await EventCache.updateOne({ iCalUId: event.iCalUId }).set({
+    // キャッシュ更新
+    const cache = await EventCache.updateOne({ iCalUId: event.iCalUId }).set({
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
       value: event,
     });
+
+    // トラッキング追加
+    if (isUserModified && !cache.tracking) {
+      await MSCache.createEventCacheTracking(cache);
+    }
   },
 
   // 削除
   deleteEvent: async (criteria) => {
+    const caches = await EventCache.find(criteria).populate("tracking");
+    await EventCacheTracking.destroy({
+      id: { in: caches.map((item) => item.tracking.id) },
+    });
     await EventCache.destroy(criteria);
   },
 
   //================================================
-  // 定期イベントのinstancesからキャッシュ保存する
+  // 定期イベントのinstancesをキャッシュ保存する
   reflectEventForRecurrence: async (seriesMasterId, events) => {
     // キャッシュから一旦全削除
-    await EventCache.destroy({ seriesMasterId: seriesMasterId });
+    const criteria = { seriesMasterId: seriesMasterId };
+    await MSCache.deleteEvent(criteria);
+
     // instances分をキャッシュ保存
     await forEach(
       events,
@@ -197,5 +215,15 @@ module.exports = {
   // 削除(RoomEvent)
   deleteRoomEvent: async (criteria) => {
     await RoomEventCache.destroy(criteria);
+  },
+
+  //================================================
+  //================================================
+  // キャッシュトラッキングの登録
+  createEventCacheTracking: async (eventCache) => {
+    const tracking = await EventCacheTracking.create({
+      eventCache: eventCache.id,
+    }).fetch();
+    await EventCache.updateOne(eventCache.id).set({ tracking: tracking.id });
   },
 };

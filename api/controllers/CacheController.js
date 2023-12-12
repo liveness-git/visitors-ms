@@ -44,6 +44,7 @@ module.exports = {
       });
 
       // キャッシュ全削除
+      await EventCacheTracking.destroy({});
       await EventCache.destroy({});
       // 指定期間のイベントを全登録
       await MSCache.saveAllEvents(events);

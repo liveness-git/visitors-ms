@@ -329,7 +329,7 @@ module.exports = {
       $.data.end.dateTime = MSGraph.getGraphDateTime(end) + strDateTimeTail;
       $.data.end.timeZone = MSGraph.getTimeZone();
     }
-    await MSCache.updateEvent($.data); // キャッシュに反映
+    await MSCache.updateEvent($.data, true); // キャッシュに反映
     return $.data;
   },
 
