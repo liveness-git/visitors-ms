@@ -23,12 +23,12 @@ module.exports = {
     start: {
       type: "ref",
       columnType: "datetime",
-      required: true,
+      // required: true, ※trackingの場合は未入力
     },
     end: {
       type: "ref",
       columnType: "datetime",
-      required: true,
+      // required: true, ※trackingの場合は未入力
     },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗

@@ -57,6 +57,6 @@ module.exports.policies = {
   },
 
   CacheController: {
-    "*": true,
+    "*": "isAdminUser",
   },
 };

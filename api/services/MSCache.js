@@ -137,22 +137,34 @@ module.exports = {
   },
 
   // 更新
-  updateEvent: async ($event, isUserModified = false) => {
+  updateEvent: async (
+    $event,
+    isUserModified = false,
+    isTrackingReset = false
+  ) => {
     const event = _.cloneDeep($event);
 
     //mongodbに保存できないため削除
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    // キャッシュ更新
-    const cache = await EventCache.updateOne({ iCalUId: event.iCalUId }).set({
+    //更新情報
+    const data = {
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
       value: event,
-    });
+    };
+    if (isTrackingReset) {
+      data.tracking = null; // トラッキングとの同期解除
+    }
+
+    // キャッシュ更新
+    const cache = await EventCache.updateOne({ iCalUId: event.iCalUId }).set(
+      data
+    );
 
     // トラッキング追加
-    if (isUserModified && !cache.tracking) {
+    if (isUserModified) {
       await MSCache.createEventCacheTracking(cache);
     }
   },
@@ -221,9 +233,23 @@ module.exports = {
   //================================================
   // キャッシュトラッキングの登録
   createEventCacheTracking: async (eventCache) => {
+    const check = await EventCacheTracking.find({ eventCache: eventCache.id });
+    if (!check) {
+      return; //既に登録済みのため登録不要
+    }
+    // trackingへの登録とeventCacheへの手動同期
     const tracking = await EventCacheTracking.create({
       eventCache: eventCache.id,
     }).fetch();
     await EventCache.updateOne(eventCache.id).set({ tracking: tracking.id });
+  },
+
+  // トラッキングが必要か否か
+  isTrackingTarget: async (event) => {
+    // 会議室ごとのオブジェクトに再加工
+    const locations = await MSGraph.reduceLocations(event);
+    const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
+
+    return locations[first].status === "none";
   },
 };
