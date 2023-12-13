@@ -250,6 +250,9 @@ module.exports = {
     const locations = await MSGraph.reduceLocations(event);
     const first = Object.keys(locations)[0]; // TODO:複数会議室未対応
 
-    return locations[first].status === "none";
+    return (
+      locations[first].status === "none" ||
+      locations[first].status === "notResponded"
+    );
   },
 };
