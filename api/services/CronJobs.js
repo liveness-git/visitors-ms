@@ -80,6 +80,10 @@ module.exports = {
 
     // EventCacheTrackingに登録されている情報全てを処理
     const targets = await EventCacheTracking.find().populate("eventCache");
+    if (targets.length === 0) {
+      return;
+    }
+
     await forEach(targets, async (target) => {
       // GraphAPIから最新eventを取得
       const event = await MSGraph.getEventById(
@@ -102,10 +106,10 @@ module.exports = {
       }
     });
 
-    // キャッシュログ作成
-    await CacheLog.create({
-      type: "event",
-      mode: "tracking",
-    });
+    // // キャッシュログ作成 //TODO: 処理回数が多いためコメントアウト
+    // await CacheLog.create({
+    //   type: "event",
+    //   mode: "tracking",
+    // });
   },
 };
