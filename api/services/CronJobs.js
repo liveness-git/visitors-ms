@@ -85,6 +85,12 @@ module.exports = {
     }
 
     await forEach(targets, async (target) => {
+      // 最新のイベントキャッシュ取得
+      const latest = await EventCache.find(target.eventCache.id);
+      if (!latest) {
+        return; // 削除されているeventのため処理不要
+      }
+
       // GraphAPIから最新eventを取得
       const event = await MSGraph.getEventById(
         cacheToken,
@@ -99,7 +105,7 @@ module.exports = {
       }
 
       //TODO:
-      // GraphAPI通信時間とキャッシュ時間を比較してデグレしないようにする？？
+      // GraphAPI通信時間とキャッシュ時間を比較してデグレしないようにする必要はある？？
       if (1) {
         await MSCache.updateEvent(event, false, true); // キャッシュに反映
         await EventCacheTracking.destroy(target.id); // Tracking対象から外れるため削除

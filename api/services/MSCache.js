@@ -3,7 +3,7 @@ const { forEach } = require("p-iteration");
 
 module.exports = {
   //Eventキャッシュが現在保持している範囲
-  rageRetDateForEvent: async () => {
+  rangeRetDateForEvent: async () => {
     const logs = await CacheLog.find({ type: "event", mode: "reset" }).sort(
       "createdAt DESC"
     );
@@ -21,7 +21,7 @@ module.exports = {
     let startDiff;
     let endDiff;
 
-    const [minRetDate, maxRetDate] = await MSCache.rageRetDateForEvent();
+    const [minRetDate, maxRetDate] = await MSCache.rangeRetDateForEvent();
 
     if (minRetDate === null && maxRetDate === null) {
       // キャッシュが存在しないため全部リクエストが必要
@@ -78,7 +78,7 @@ module.exports = {
     }
     // isUserModified=trueの場合、イベントがキャッシュ保持期間内がチェック
     if (isUserModified) {
-      const [minRetDate, maxRetDate] = await MSCache.rageRetDateForEvent();
+      const [minRetDate, maxRetDate] = await MSCache.rangeRetDateForEvent();
       if (
         new Date($event.start.dateTime) > maxRetDate ||
         new Date($event.end.dateTime) < minRetDate
@@ -142,6 +142,33 @@ module.exports = {
     isUserModified = false,
     isTrackingReset = false
   ) => {
+    // 事前チェック
+    const preCheck = await EventCache.findOne({
+      iCalUId: $event.iCalUId,
+    });
+    if (!preCheck) {
+      // キャッシュに関して更新ではなく登録として処理(キャッシュ対象外eventを更新かけている場合に該当)
+      await MSCache.createEvent($event, isUserModified);
+      return;
+    }
+
+    // イベントの種類がseriesMasterの場合、キャッシュ対象外
+    if ($event.type === "seriesMaster") {
+      return;
+    }
+    // isUserModified=trueの場合、イベントがキャッシュ保持期間内がチェック
+    if (isUserModified) {
+      const [minRetDate, maxRetDate] = await MSCache.rangeRetDateForEvent();
+      if (
+        new Date($event.start.dateTime) > maxRetDate ||
+        new Date($event.end.dateTime) < minRetDate
+      ) {
+        // 保持期間から外れた為、キャッシュ削除
+        await MSCache.deleteEvent({ iCalUId: $event.iCalUId });
+        return;
+      }
+    }
+
     const event = _.cloneDeep($event);
 
     //mongodbに保存できないため削除
@@ -172,9 +199,11 @@ module.exports = {
   // 削除
   deleteEvent: async (criteria) => {
     const caches = await EventCache.find(criteria).populate("tracking");
-    await EventCacheTracking.destroy({
-      id: { in: caches.map((item) => item.tracking.id) },
-    });
+    if (caches.lenght > 0) {
+      await EventCacheTracking.destroy({
+        id: { in: caches.map((item) => item.tracking.id) },
+      });
+    }
     await EventCache.destroy(criteria);
   },
 
