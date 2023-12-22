@@ -13,9 +13,15 @@ module.exports.cron = {
   },
   patchJob: {
     schedule: "0 */10 * * * *", // 10分毎に実行
+    // こういう方法だと、resetJobと実行時間が被りません。
+    // schedule: "0 5,15,25,35,45,55 * * * *", // 各時x5分に実行
     onTick: async () => {
       try {
-        sails.log.debug("patchJob");
+        /**
+         * feature-0.0.1.0
+         * キャッシュの更新ジョブを実行する。
+         */
+        await CronJobs.patchJob();
       } catch (err) {
         sails.log.error("cron.patchJob(): ", err.message);
       }
