@@ -70,6 +70,69 @@ module.exports = {
   },
 
   /**
+   * feature-0.0.1.0
+   * キャッシュ情報を更新する。
+   */
+  patchJob: async () => {
+    sails.log.debug('Update caches.');
+    //-------------------
+    // キャッシュログから最新を取得する。
+    const cacheLogs = await CacheLog.find({
+      sort: 'start DESC',
+      limit: 1,
+    });
+
+    // キャッシュログに情報がない場合は処理をキャンセルする。
+    if (!cacheLogs || cacheLogs.length === 0) {
+      return;
+    }
+
+    // 最新キャッシュログから検索範囲(開始日時～終了日時)を取得する。
+    const cacheLog = cacheLogs[0];
+    const { start, end /*, type, mode*/ } = cacheLog;
+    const startTimestamp = moment(start);
+    const endTimestamp = moment(end);
+
+    // キャッシュ用アカウントを取得する。
+    const localAccountId = await MSAuth.acquireCacheAccountId();
+    
+    // msalから有効なaccessToken取得(キャッシュ用)
+    const cacheToken = await MSAuth.acquireToken(localAccountId);
+
+    // graphAPIからevent取得
+    const events = await MSGraph.getCalendarEvents(cacheToken, cacheEmail, {
+      startDateTime: moment(startTimestamp).format(),
+      endDateTime: moment(endTimestamp).format(),
+      $orderBy: "start/dateTime",
+      $select: MSGraph.visitorsSelecter,
+      $filter: `categories/any(c:c eq '${MSGraph.getVisitorsLabel()}')`,
+    });
+
+    // キャッシュを更新
+    await MSCache.updateAllEvents(events);
+
+    //-------------------
+
+    // LivenessRoomsを表示する会議室のみが対象
+    const rooms = await Room.find({ displayLivenessRooms: true });
+    const roomEmails = rooms.map((room) => room.email);
+
+    // 対象会議室分回す
+    await forEach(roomEmails, async (roomEmail) => {
+      // graphAPIからLIVENESS Roomsのevent取得
+      const lrooms = await MSGraph.getCalendarEvents(cacheToken, roomEmail, {
+        startDateTime: moment(startTimestamp).format(),
+        endDateTime: moment(endTimestamp).format(),
+        $orderBy: "start/dateTime",
+        $select: MSGraph.lroomsSelector,
+        $filter: `categories/any(c:c eq '${MSGraph.getLroomsLabel()}')`,
+      });
+      // 指定期間のRoomsイベントを全登録
+      await MSCache.updateAllRoomEvents(lrooms);
+    });
+  },
+
+  /**
    * 会議室のstatus反映の為に追跡する
    */
   tracking: async () => {

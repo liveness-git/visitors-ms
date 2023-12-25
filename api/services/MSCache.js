@@ -62,11 +62,69 @@ module.exports = {
     await forEach(events, async (event) => await MSCache.createEvent(event));
   },
 
+  /**
+   * feature-0.0.1.0
+   * 最新イベントリストでキャッシュしたイベントデータを更新する。
+   * @param {*} events Graph APIから取得した最新イベントリスト
+   */
+  updateAllEvents: async (events) => {
+    // 取得した最新イベントのiCalUIdリストを作成する。
+    const existiCalUIds = events.reduce((acc, event) => [...acc, event.iCalUId], []);
+
+    // 最新iCalUIdリストにないiCalUIdを持つキャッシュは削除されていると判断できる。
+    const removingCaches = await EventCache.find({
+      where: { iCalUId: { nin: existiCalUIds } }
+    });
+
+    // 削除されたと判断したキャッシュのiCalUIdを配列にする。
+    const removingiCalUIds = removingCaches.reduce(
+      (acc, cache) => [...acc, cache.iCalUId],
+      []
+    );
+
+    // 削除対象のキャッシュを削除する。
+    await MSCache.deleteEvent({
+      where: { iCalUId: { in: removingiCalUIds } } }
+    );
+
+    // 取得した最新イベントでキャッシュを更新する。
+    await forEach(events, async (event) => await MSCache.updateEvent(event));
+  },
+
   saveAllRoomEvents: async (events, roomEmail) => {
     await forEach(
       events,
       async (event) => await MSCache.createRoomEvent(event, roomEmail)
     );
+  },
+
+  /**
+   * feature-0.0.1.0
+   * 最新Roomsイベントリストでキャッシュしたイベントデータを更新する。
+   * @param {*} events Graph APIから取得した最新Roomsイベントリスト
+   */
+  updateAllRoomEvents: async (events) => {
+    // 取得した最新イベントのiCalUIdリストを作成する。
+    const existiCalUIds = events.reduce((acc, event) => [...acc, event.iCalUId], []);
+
+    // 最新iCalUIdリストにないiCalUIdを持つキャッシュは削除されていると判断できる。
+    const removingCaches = await RoomEventCache.find({
+      where: { iCalUId: { nin: existiCalUIds } }
+    });
+
+    // 削除されたと判断したキャッシュのiCalUIdを配列にする。
+    const removingiCalUIds = removingCaches.reduce(
+      (acc, cache) => [...acc, cache.iCalUId],
+      []
+    );
+
+    // 削除対象のキャッシュを削除する。
+    await MSCache.deleteRoomEvent({
+      where: { iCalUId: { in: removingiCalUIds } }
+    });
+
+    // 取得した最新イベントでキャッシュを更新する。
+    await forEach(events, async (event) => await MSCache.updateRoomEvent(event));
   },
 
   //================================================
@@ -174,6 +232,11 @@ module.exports = {
     //mongodbに保存できないため削除
     delete event["@odata.context"];
     delete event["@odata.etag"];
+    /**
+     * feature-0.0.1.0
+     * associationLinkも削除
+     */
+    delete event["@odata.associationLink"];
 
     //更新情報
     const data = {
@@ -185,10 +248,14 @@ module.exports = {
       data.tracking = null; // トラッキングとの同期解除
     }
 
-    // キャッシュ更新
-    const cache = await EventCache.updateOne({ iCalUId: event.iCalUId }).set(
-      data
-    );
+    /**
+     * DBのイベントキャッシュを更新する。
+     * feature-0.0.1.0
+     * where 句を追加して元の条件を囲う。
+     */
+    const cache = await EventCache.updateOne({
+      where: { iCalUId: event.iCalUId }
+    }).set(data);
 
     // トラッキング追加
     if (isUserModified) {
@@ -230,7 +297,12 @@ module.exports = {
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
+    /**
+     * feature-0.0.1.0
+     * Roomイベントキャッシュの項目にiCalUIdを追加する。
+     */
     await RoomEventCache.create({
+      iCalUId: event.iCalUId,
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
       email: email,
@@ -246,7 +318,13 @@ module.exports = {
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    await RoomEventCache.updateOne({ iCalUId: event.iCalUId }).set({
+    /**
+     * feature-0.0.1.0
+     * where 句を追加して元の条件を囲う。
+     */
+    await RoomEventCache.updateOne({
+      where: { iCalUId: event.iCalUId }
+    }).set({
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
       value: event,
@@ -270,7 +348,12 @@ module.exports = {
     const tracking = await EventCacheTracking.create({
       eventCache: eventCache.id,
     }).fetch();
-    await EventCache.updateOne(eventCache.id).set({ tracking: tracking.id });
+
+    /**
+     * feature-0.0.1.0
+     * where 句を追加して元の条件を囲う。
+     */
+    await EventCache.updateOne({where:{id: eventCache.id}}).set({ tracking: tracking.id });
   },
 
   // トラッキングが必要か否か
