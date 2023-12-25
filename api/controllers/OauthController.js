@@ -117,7 +117,7 @@ module.exports = {
             };
           });
 
-          return res.json({ ok: true });
+          return res.json({ ok: true, topPage: sails.config.visitors.topPage });
         })
         .catch((error) => {
           sails.log.error("OauthController.redirect()----: ", error);
