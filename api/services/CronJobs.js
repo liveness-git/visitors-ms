@@ -70,15 +70,13 @@ module.exports = {
   },
 
   /**
-   * feature-0.0.1.0
    * キャッシュ情報を更新する。
    */
   patchJob: async () => {
-    sails.log.debug('Update caches.');
     //-------------------
     // キャッシュログから最新を取得する。
     const cacheLogs = await CacheLog.find({
-      sort: 'start DESC',
+      sort: "start DESC",
       limit: 1,
     });
 
@@ -95,7 +93,7 @@ module.exports = {
 
     // キャッシュ用アカウントを取得する。
     const localAccountId = await MSAuth.acquireCacheAccountId();
-    
+
     // msalから有効なaccessToken取得(キャッシュ用)
     const cacheToken = await MSAuth.acquireToken(localAccountId);
 

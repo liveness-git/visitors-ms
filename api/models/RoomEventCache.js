@@ -26,10 +26,6 @@ module.exports = {
     },
     value: { type: "json", columnType: "array", required: true },
 
-    /**
-     * feature-0.0.1.0
-     * iCalUId 追加
-     */
     iCalUId: {
       type: "string",
       required: true,

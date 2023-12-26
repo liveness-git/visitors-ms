@@ -103,8 +103,8 @@ module.exports = {
         inputs.endTimestamp
       );
 
-      sails.log.debug("criteria : ", criteria); //TODO: debug
-      sails.log.debug("------------ "); //TODO: debug
+      // sails.log.debug("criteria : ", criteria); //TODO: debug
+      // sails.log.debug("------------ "); //TODO: debug
     }
 
     // 必要に応じてGraphAPIから取得
