@@ -383,6 +383,13 @@ module.exports = {
     getDefaultOfContactAddr: undefined, // 連絡先デフォルト値の設定関数(user:GraphAPIのUser情報):string => void。設定しない場合undefined ***ver.1.0.3
     calendarViewCount: 500, // GraphAPIのcalendar/calendarViewリクエストで１回で取得する件数（最小値は 1、最大値は 1000） ***ver.1.2.0
     topPage: "", //topPage: "byroom", // login後に遷移するトップページを設定。urlの'https://xxx/ロケーション名/main'より後ろを指定。***ver.2.0
+    cacheMonth: 2, // キャッシュ保持範囲(単位:ヵ月) ***ver.2.0
+    cron: {
+      // cron設定 ***ver.2.0
+      resetJob: { schedule: "0 0 2 * * *" }, // 毎日AM2:00に実行
+      patchJob: { schedule: "0 5,15,25,35,45,55 * * * *" }, // 各時x5分に実行
+      trackingJob: { schedule: "*/10 * * * * *" }, // 10秒毎に実行
+    },
   },
 
   appUrl: "",

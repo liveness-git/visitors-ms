@@ -4,9 +4,11 @@ const { forEach } = require("p-iteration");
 module.exports = {
   //Eventキャッシュが現在保持している範囲
   rangeRetDateForEvent: async () => {
-    const logs = await CacheLog.find({ type: "event", mode: "reset" }).sort(
-      "createdAt DESC"
-    );
+    const logs = await CacheLog.find({
+      where: { type: "event", mode: "reset" },
+      sort: "createdAt DESC",
+      limit: 1,
+    });
     // キャッシュがない場合はnullを返す
     if (logs.length === 0) {
       return [null, null];

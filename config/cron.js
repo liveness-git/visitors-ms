@@ -2,6 +2,7 @@
 
 module.exports.cron = {
   resetJob: {
+    // schedule: sails.config.visitors.cron.resetJob.schedule,
     schedule: "0 0 2 * * *", // 毎日AM2:00に実行
     onTick: async () => {
       try {
@@ -12,9 +13,8 @@ module.exports.cron = {
     },
   },
   patchJob: {
-    schedule: "0 */10 * * * *", // 10分毎に実行
-    // こういう方法だと、resetJobと実行時間が被りません。
-    // schedule: "0 5,15,25,35,45,55 * * * *", // 各時x5分に実行
+    // schedule: sails.config.visitors.cron.patchJob.schedule,
+    schedule: "0 5,15,25,35,45,55 * * * *", // 各時x5分に実行
     onTick: async () => {
       try {
         /**
@@ -26,8 +26,10 @@ module.exports.cron = {
         sails.log.error("cron.patchJob(): ", err.message);
       }
     },
+    // start: false,
   },
   trackingJob: {
+    // schedule: sails.config.visitors.cron.trackingJob.schedule,
     schedule: "*/10 * * * * *", // 10秒毎に実行
     onTick: async () => {
       try {
@@ -36,5 +38,6 @@ module.exports.cron = {
         sails.log.error("cron.trackingJob(): ", err.message);
       }
     },
+    // start: false,
   },
 };

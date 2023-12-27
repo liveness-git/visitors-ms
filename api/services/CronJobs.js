@@ -11,10 +11,12 @@ module.exports = {
    * キャッシュ全削除後、指定期間のイベントを全登録
    */
   saveEvents: async () => {
-    // キャッシュ保持期間の設定（指定日を起点に未来１か月分）
+    // キャッシュ保持期間の設定（指定日を起点に未来〇ヵ月分）
     const timestamp = new Date().getTime();
     const startTimestamp = moment(timestamp).startOf("date");
-    const endTimestamp = moment(timestamp).endOf("date").add(1, "months");
+    const endTimestamp = moment(timestamp)
+      .endOf("date")
+      .add(sails.config.visitors.cacheMonth, "months");
 
     // キャッシュ用アカウント設定
     const localAccountId = await MSAuth.acquireCacheAccountId();
@@ -165,12 +167,8 @@ module.exports = {
         return; // 継続して追跡が必要なため、キャッシュ更新対象外
       }
 
-      //TODO:
-      // GraphAPI通信時間とキャッシュ時間を比較してデグレしないようにする必要はある？？
-      if (1) {
-        await MSCache.updateEvent(event, false, true); // キャッシュに反映
-        await EventCacheTracking.destroy(target.id); // Tracking対象から外れるため削除
-      }
+      await MSCache.updateEvent(event, false, true); // キャッシュに反映
+      await EventCacheTracking.destroy(target.id); // Tracking対象から外れるため削除
     });
 
     // // キャッシュログ作成 //TODO: 処理回数が多いためコメントアウト

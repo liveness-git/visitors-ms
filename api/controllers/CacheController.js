@@ -16,7 +16,14 @@ module.exports = {
    */
   saveEvents: async (req, res) => {
     try {
+      // sails.hooks.cron.jobs.patchJob.stop();
+      // sails.hooks.cron.jobs.tracking.stop();
+
       await CronJobs.saveEvents();
+
+      // sails.hooks.cron.jobs.patchJob.start();
+      // sails.hooks.cron.jobs.tracking.start();
+
       return res.send("Hi there!");
     } catch (err) {
       sails.log.error("CacheController.saveEvents(): ", err.message);
