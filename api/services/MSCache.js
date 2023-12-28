@@ -88,7 +88,7 @@ module.exports = {
 
     // 削除対象のキャッシュを削除する。
     await MSCache.deleteEvent({
-      where: { iCalUId: { in: removingiCalUIds } },
+      iCalUId: { in: removingiCalUIds },
     });
 
     // 取得した最新イベントでキャッシュを更新する。
@@ -267,9 +267,15 @@ module.exports = {
   // 削除
   deleteEvent: async (criteria) => {
     const caches = await EventCache.find(criteria).populate("tracking");
-    if (caches.lenght > 0) {
+    const removeTrackings = caches.reduce(
+      (acc, item) => (!!item.tracking ? [...acc, item.tracking.id] : [...acc]),
+      []
+    );
+    if (removeTrackings.length > 0) {
       await EventCacheTracking.destroy({
-        id: { in: caches.map((item) => item.tracking.id) },
+        id: {
+          in: removeTrackings,
+        },
       });
     }
     await EventCache.destroy(criteria);

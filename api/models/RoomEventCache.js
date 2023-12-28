@@ -25,7 +25,6 @@ module.exports = {
       required: true,
     },
     value: { type: "json", columnType: "array", required: true },
-
     iCalUId: {
       type: "string",
       required: true,

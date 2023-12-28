@@ -4,13 +4,9 @@ const { reduce } = require("p-iteration");
 const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
 const visitorsSelecter =
-"start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
-
-/**
- * feature-0.0.1.0
- * 取得する項目にiCalUIdを追加する。
- */
-const lroomsSelector = "start,end,subject,categories,locations,attendees,iCalUId";
+  "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
+const lroomsSelector =
+  "start,end,subject,categories,locations,attendees,iCalUId";
 
 const strDateTimeTail = ".0000000";
 const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
