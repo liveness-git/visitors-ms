@@ -1,5 +1,29 @@
 # visitors-ms
 
+## feature-0.0.1.0-2023-12-21
+
+- 項目に `iCalUId` を追加
+  - modified: api/models/RoomEventCache.js
+- メソッドに `patchJob` を追加
+  - modified: api/services/CronJobs.js
+- 以下を修正
+  - メソッドに `updateAllEvents` を追加
+  - メソッドに `updateAllRoomEvents` を追加
+  - メソッド `updateEvent`
+    - `event` に含まれる `@odata.associationLink` を、MongoDBに記録できないため削除
+    - `EventCache.updateOne` に渡す引数を `where` 句で囲う。
+  - メソッド `createRoomEvent`
+    - `RoomEventCache.create` に渡す引数に `iCalUId` 項目を追加する。
+  - メソッド `updateRoomEvent`
+    - `RoomEventCache.updateOne` に渡す引数を `where` 句で囲う。
+  - メソッド `createEventCacheTracking`
+    - `EventCache.updateOne` に渡す引数を `where` 句で囲う。
+  - modified: api/services/MSCache.js
+- `lroomsSelector` の選択項目に `iCalUId` を追加
+  - modified: api/services/MSGraph.js
+- `patchJob` から `CronJobs.patchJob` を呼び出す。
+  - modified: config/cron.js
+
 ## 0.0.0.65-2022-10-06
 
 - テスト的に定期データの更新(全体)できるよう設定。

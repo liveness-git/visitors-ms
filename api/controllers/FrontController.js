@@ -39,7 +39,8 @@ module.exports = {
           ownerEmail,
           startTimestamp,
           endTimestamp,
-          data.location
+          data.location,
+          "not-used" //キャッシュ利用しない
         );
       } else {
         // TODO: 会議室単位で取得ループ
@@ -70,8 +71,8 @@ module.exports = {
 
       return res.json({ success: true, value: result });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("FrontController.export(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -125,8 +126,8 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("FrontController.checkin(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -146,8 +147,8 @@ module.exports = {
         throw new Error("The update process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("FrontController.checkout(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -165,20 +166,19 @@ module.exports = {
 
       const location = await Location.findOne({ url: req.query.location });
 
-      let events = [];
-      if (isOwnerMode) {
-        // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
-        events = await sails.helpers.getTargetFromEvents(
-          MSGraph.getLocationLabel(location.id),
-          ownerToken,
-          ownerEmail,
-          startTimestamp,
-          endTimestamp,
-          req.query.location
-        );
-      } else {
-        // TODO: 会議室単位で取得ループ
-      }
+      // if (isOwnerMode) {
+      // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
+      const events = await sails.helpers.getTargetFromEvents(
+        MSGraph.getLocationLabel(location.id),
+        ownerToken,
+        ownerEmail,
+        startTimestamp,
+        endTimestamp,
+        req.query.location
+      );
+      // } else {
+      //   // TODO: 会議室単位で取得ループ
+      // }
 
       // GraphAPIのevent情報とVisitor情報をマージ
       const $result = (
@@ -205,8 +205,8 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("FrontController.visitList(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 };

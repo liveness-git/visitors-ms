@@ -1,4 +1,4 @@
-const { map, filter } = require("p-iteration");
+const { map } = require("p-iteration");
 
 module.exports = {
   friendlyName: "get livenessRooms events",
@@ -26,28 +26,22 @@ module.exports = {
 
       const params = [...inputs.getTargetFromEventsParams];
       params[1] = email; // emailを会議室アドレスに上書き
-      params[6] = "start,end,subject,categories,locations,attendees"; // customVisitorsSelecterを上書き
+      params[5] = { email: email }; // cacheCriteria用
+      params[6] = true; // LIVENESS Roomsのイベント取得時はTrue
 
       return await sails.helpers.getTargetFromEvents(
-        "rooms:created",
+        MSGraph.getLroomsLabel(),
         ...params
       );
     };
 
-    // LivenessRoomsを表示する会議室のみを抽出
-    const roomEmails = await filter(
-      inputs.roomEmails,
-      async (email) =>
-        !!(await Room.findOne({ email: email, displayLivenessRooms: true }))
-    );
-
     const results = await Promise.all(
-      roomEmails.map((email, index) => request(email, index))
+      inputs.roomEmails.map((email, index) => request(email, index))
     );
     // 調整 *** 並列 ← await追加して直列に変更
     // const results = [];
-    // for (let i = 0; i < roomEmails.length; i++) {
-    //   results.push(await request(roomEmails[i]));
+    // for (let i = 0; i < inputs.roomEmails.length; i++) {
+    //   results.push(await request(inputs.roomEmails[i]));
     // }
 
     const $result = results.reduce((prev, cur) => prev.concat(cur), []);

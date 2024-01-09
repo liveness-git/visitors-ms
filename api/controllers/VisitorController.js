@@ -5,8 +5,6 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
-const MSGraph = require("../services/MSGraph");
-
 module.exports = {
   create: async (req, res) => {
     try {
@@ -21,7 +19,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -39,7 +37,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -56,7 +54,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 };

@@ -46,7 +46,7 @@ module.exports = {
         return response.accessToken;
       })
       .catch((error) => {
-        console.log(error);
+        sails.log.error(error);
         return error;
       });
   },
@@ -75,7 +75,7 @@ module.exports = {
           return response.account.localAccountId;
         })
         .catch((error) => {
-          console.log(error);
+          sails.log.error(error);
         });
     }
   },
@@ -102,7 +102,37 @@ module.exports = {
           return response.account.localAccountId;
         })
         .catch((error) => {
-          console.log(error);
+          sails.log.error(error);
+        });
+    }
+  },
+
+  // キャッシュ用アカウントのlocalAccountIdを取得
+  acquireCacheAccountId: async () => {
+    // msalのトークンキャッシュ内にキャッシュ用アカウントが既にあるか調べる
+    const msalTokenCache = msalApp.getTokenCache();
+    const accounts = await msalTokenCache.getAllAccounts();
+    const cache = accounts.find(
+      (ac) =>
+        ac.username === sails.config.visitors.credential.cacheAccount.username
+    );
+
+    if (cache) {
+      return cache.localAccountId;
+    } else {
+      // キャッシュにない場合はOAuth認証処理して情報取得
+      const usernamePasswordRequest = {
+        scopes: MSAuth.requestScopes,
+        username: sails.config.visitors.credential.cacheAccount.username,
+        password: sails.config.visitors.credential.cacheAccount.password,
+      };
+      return msalApp
+        .acquireTokenByUsernamePassword(usernamePasswordRequest)
+        .then((response) => {
+          return response.account.localAccountId;
+        })
+        .catch((error) => {
+          sails.log.error(error);
         });
     }
   },

@@ -41,6 +41,7 @@ module.exports.routes = {
   "GET /:location?/settings/room": resolver,
   "GET /:location?/settings/location": resolver,
   "GET /:location?/settings/category": resolver,
+  "GET /:location?/settings/resetcache": resolver,
   // msOAuth
   "GET /oauth/signin": "OauthController.signin",
   "GET /oauth/redirect": resolver,
@@ -85,6 +86,9 @@ module.exports.routes = {
   "POST /category/create": "CategoryController.create",
   "POST /category/update": "CategoryController.update",
   "POST /category/delete": "CategoryController.delete",
+
+  // API
+  "GET /api/cache/events/save": "CacheController.saveEvents",
 
   // default
   "GET /:location?/": resolver,

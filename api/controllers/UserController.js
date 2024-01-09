@@ -67,8 +67,8 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("UserController.addressbook(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 };

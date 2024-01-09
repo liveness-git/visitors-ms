@@ -5,10 +5,16 @@ const baseUrl = "https://graph.microsoft.com/v1.0/users";
 const labelTitle = "Visitors:";
 const visitorsSelecter =
   "start,end,iCalUId,subject,categories,organizer,location,locations,attendees,type,seriesMasterId,recurrence,isOnlineMeeting";
+const lroomsSelector =
+  "start,end,subject,categories,locations,attendees,iCalUId";
+
+const strDateTimeTail = ".0000000";
+const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
 
 module.exports = {
   baseUrl,
   visitorsSelecter,
+  lroomsSelector,
 
   getEventById: async (accessToken, email, id) => {
     const path = `events/${id}`;
@@ -71,9 +77,6 @@ module.exports = {
   getSchedule: async (accessToken, email, data) => {
     // TODO: calendar/getScheduleのGraphAPI、３か月先以降の予定がtimezone絡みでおかしくなるため
     // TODO: リクエスト前にtimezoneをUTCに変換 ⇒ 結果を日本時間に戻して返す。
-
-    const strDateTimeTail = ".0000000";
-    const timezoneDiff = sails.config.visitors.timezoneDiff * 60 * 60 * 1000;
 
     // timezone ⇒ UTC
     const startTimestamp =
@@ -298,6 +301,7 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+    await MSCache.createEvent($.data, true); // キャッシュに反映
     return $.data;
   },
 
@@ -313,10 +317,24 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+
+    // 時間変更を伴わない更新の場合、responseのevent情報がutcになっているため
+    // ここでtimezoneを変更しておく
+    if ($.data.start.timeZone.toLowerCase() === "utc") {
+      const start = MSGraph.getTimestamp($.data.start.dateTime) + timezoneDiff;
+      $.data.start.dateTime = MSGraph.getGraphDateTime(start) + strDateTimeTail;
+      $.data.start.timeZone = MSGraph.getTimeZone();
+    }
+    if ($.data.end.timeZone.toLowerCase() === "utc") {
+      const end = MSGraph.getTimestamp($.data.end.dateTime) + timezoneDiff;
+      $.data.end.dateTime = MSGraph.getGraphDateTime(end) + strDateTimeTail;
+      $.data.end.timeZone = MSGraph.getTimeZone();
+    }
+    await MSCache.updateEvent($.data, true); // キャッシュに反映
     return $.data;
   },
 
-  deleteEvent: async (accessToken, email, eventId) => {
+  deleteEvent: async (accessToken, email, eventId, criteria) => {
     const path = `events/${eventId}`;
     const $ = await MSGraph.request(accessToken, email, path, {
       method: "DELETE",
@@ -324,6 +342,7 @@ module.exports = {
         Prefer: `outlook.timezone="${MSGraph.getTimeZone()}"`,
       },
     });
+    await MSCache.deleteEvent(criteria); // キャッシュに反映
     return $.data || null;
   },
 
@@ -368,7 +387,7 @@ module.exports = {
       return await Http.request(_options);
     } catch (err) {
       if (err.response.data) {
-        sails.log.error(err.response.data);
+        sails.log.error("MSGraph.request(): ", err.response.data);
       }
       throw err;
     }
@@ -617,10 +636,17 @@ module.exports = {
     str.substring(str.indexOf("T") + 1, str.lastIndexOf(":")),
 
   getVisitorsLabel: () => `${labelTitle}.`,
-  getLocationLabel: (id) => `${labelTitle}locationId is ${id}.`,
-  getCategoryLabel: (id) => `${labelTitle}categoryId is ${id}.`,
-  getRoomLabel: (id) => `${labelTitle}roomId is ${id}.`,
-  getAuthorLabel: (email) => `${labelTitle}Created by ${email}.`,
+  getLocationLabel: (id) => `${MSGraph.getLocationLabelBase()} ${id}.`,
+  getCategoryLabel: (id) => `${MSGraph.getCategoryLabelBase()} ${id}.`,
+  getRoomLabel: (id) => `${MSGraph.getRoomLabelBase()} ${id}.`,
+  getAuthorLabel: (email) => `${MSGraph.getAuthorLabelBase()} ${email}.`,
+
+  getLroomsLabel: () => `rooms:created`,
+
+  getLocationLabelBase: () => `${labelTitle}locationId is`,
+  getCategoryLabelBase: () => `${labelTitle}categoryId is`,
+  getRoomLabelBase: () => `${labelTitle}roomId is`,
+  getAuthorLabelBase: () => `${labelTitle}Created by`,
 
   // LIVENESS Roomsによってeventが変更されているか否か
   isChangedByRooms: (event) =>
@@ -655,5 +681,17 @@ module.exports = {
       },
       {}
     );
+  },
+
+  // MSGraph.request用
+  errorHandler: (res, error) => {
+    if (error.response) {
+      res.status(error.response.status).send({
+        error: error.response.data,
+        errorMsg: error.message,
+      });
+    } else {
+      res.status(500).send({ errorMsg: error.message });
+    }
   },
 };

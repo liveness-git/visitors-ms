@@ -55,4 +55,8 @@ module.exports.policies = {
     update: "isAdminUser",
     delete: "isAdminUser",
   },
+
+  CacheController: {
+    "*": "isAdminUser",
+  },
 };

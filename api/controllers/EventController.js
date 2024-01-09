@@ -7,6 +7,7 @@
 
 const MSAuth = require("../services/MSAuth");
 const MSGraph = require("../services/MSGraph");
+const MSCache = require("../services/MSCache");
 const moment = require("moment-timezone");
 const { map } = require("p-iteration");
 
@@ -100,14 +101,15 @@ module.exports = {
 
       // 定期イベントの場合、複数作成
       if (!!$.recurrence) {
-        visitors.concat(
+        const [$visitors, instances] =
           await sails.helpers.createVisitorInstances(
             isOwnerMode ? ownerToken : accessToken,
             isOwnerMode ? ownerEmail : req.session.user.email,
             $.id,
             { ...newData, seriesMasterICalUId: $.iCalUId }
-          )
-        );
+          );
+        visitors.concat($visitors);
+        await MSCache.reflectEventForRecurrence($.id, instances); // キャッシュに反映
       }
 
       if (visitors.every((visitor) => !!visitor)) {
@@ -116,8 +118,8 @@ module.exports = {
         throw new Error("The registration process failed.");
       }
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      sails.log.error("EventController.create(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -328,17 +330,27 @@ module.exports = {
           visitors.concat(occurrence);
         }
 
-        // インスタンス登録
+        let $visitors = [];
+        let instances = [];
+
         if (isRecreate) {
-          visitors.concat(
-            await sails.helpers.createVisitorInstances(
-              isOwnerMode ? ownerToken : accessToken,
-              isOwnerMode ? ownerEmail : req.session.user.email,
-              $.id,
-              { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
-            )
+          // インスタンス登録
+          [$visitors, instances] = await sails.helpers.createVisitorInstances(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            $.id,
+            { ...newDataInstances, seriesMasterICalUId: $.iCalUId }
+          );
+          visitors.concat($visitors);
+        } else {
+          // インスタンス取得
+          instances = await MSGraph.getEventsBySeriesMasterId(
+            isOwnerMode ? ownerToken : accessToken,
+            isOwnerMode ? ownerEmail : req.session.user.email,
+            $.id
           );
         }
+        await MSCache.reflectEventForRecurrence($.id, instances); // キャッシュに反映
       }
 
       // 定期イベントの解除
@@ -358,8 +370,8 @@ module.exports = {
 
       return res.json({ success: true });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.update(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -403,7 +415,10 @@ module.exports = {
       const event = MSGraph.deleteEvent(
         isOwnerMode ? ownerToken : accessToken,
         isOwnerMode ? ownerEmail : req.session.user.email,
-        $.id
+        $.id,
+        !!data.recurrence
+          ? { seriesMasterId: $.id } // 定期イベント(全体)のキャッシュ削除条件
+          : { iCalUId: $.iCalUId } // 通常・定期イベント(今回のみ)のキャッシュ削除条件
       );
       if (!event) {
         throw new Error("Failed to delete MSGraph Event data.");
@@ -430,8 +445,8 @@ module.exports = {
 
       return res.json({ success: true });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.delete(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -462,8 +477,8 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.visitInfo(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -478,8 +493,8 @@ module.exports = {
       });
       return res.json({ isIncludesException: result.length > 0 });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.checkInstances(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -502,11 +517,17 @@ module.exports = {
         ),
       ]);
 
-      let label = MSGraph.getAuthorLabel(req.session.user.email);
-      if (!isCreatedOnly) {
-        const location = await Location.findOne({ url: req.query.location });
-        label = MSGraph.getLocationLabel(location.id);
-      }
+      const location = await Location.findOne({ url: req.query.location });
+
+      // categories絞り込み用のラベル選択
+      const label = isCreatedOnly
+        ? MSGraph.getAuthorLabel(req.session.user.email)
+        : MSGraph.getLocationLabel(location.id);
+
+      // キャッシュ抽出条件
+      const cacheCriteria = isCreatedOnly
+        ? { author: req.session.user.email }
+        : {};
 
       // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
       const $events = await sails.helpers.getTargetFromEvents(
@@ -515,7 +536,8 @@ module.exports = {
         isOwnerMode ? ownerEmail : req.session.user.email,
         startTimestamp,
         endTimestamp,
-        req.query.location
+        req.query.location,
+        cacheCriteria
       );
 
       let events = $events;
@@ -544,8 +566,8 @@ module.exports = {
 
       return res.json(result);
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.visitList(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -601,6 +623,11 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
+          // キャッシュ抽出条件
+          const cacheCriteria = {
+            category: req.query.category,
+          };
+
           // graphAPIからevent取得し対象ロケーションの会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getCategoryLabel(req.query.category) : "",
@@ -608,8 +635,10 @@ module.exports = {
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
-            req.query.location
+            req.query.location,
+            cacheCriteria
           );
+
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
             await map($events, async (event) => {
@@ -629,16 +658,24 @@ module.exports = {
             return [];
           }
 
+          // LivenessRoomsを表示する会議室のみが対象
+          const roomEmails = rooms
+            .filter((room) => room.displayLivenessRooms)
+            .map((room) => room.email);
+          if (roomEmails.length === 0) {
+            return [];
+          }
+
           // LivenessRoomsで登録されたeventを取得
           return sails.helpers.getLroomsEvents(
             [
-              ownerToken,
+              shareToken,
               ownerEmail,
               startTimestamp,
               endTimestamp,
               req.query.location,
             ],
-            rooms.map((room) => room.email)
+            roomEmails
           );
         })(),
       ]);
@@ -667,11 +704,13 @@ module.exports = {
                       item.start === event.startDateTime &&
                       item.end === event.endDateTime + event.cleaningTime &&
                       event.resourcies[key].roomEmail === schedule.scheduleId &&
-                      // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
-                      ((isOwnerMode &&
-                        event.resourcies[key].roomStatus === "accepted") ||
-                        (!isOwnerMode &&
-                          event.resourcies[key].roomStatus !== "declined"))
+                      // // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                      // ((isOwnerMode &&
+                      //   event.resourcies[key].roomStatus === "accepted") ||
+                      //   (!isOwnerMode &&
+                      //     event.resourcies[key].roomStatus !== "declined"))
+                      // キャッシュ化に伴い、無条件に辞退以外は表示
+                      event.resourcies[key].roomStatus !== "declined"
                   )
               );
               delete eventsDummy[index]; // 次回検索対象から外す
@@ -713,8 +752,8 @@ module.exports = {
 
       return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.byRoom(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 
@@ -758,6 +797,9 @@ module.exports = {
         (async () => {
           // await (async () => {// 調整 *** 並列 ← await追加して直列に変更
 
+          // キャッシュ抽出条件
+          const cacheCriteria = { room: req.query.room };
+
           // graphAPIからevent取得し対象会議室予約のみにフィルタリング。
           const $events = await sails.helpers.getTargetFromEvents(
             isOwnerMode ? MSGraph.getRoomLabel(req.query.room) : "",
@@ -765,8 +807,10 @@ module.exports = {
             isOwnerMode ? ownerEmail : req.session.user.email,
             startTimestamp,
             endTimestamp,
-            req.query.location
+            req.query.location,
+            cacheCriteria
           );
+
           // GraphAPIのevent情報とVisitor情報をマージ
           return (
             await map($events, async (event) => {
@@ -785,11 +829,15 @@ module.exports = {
           if (!(req.session.user.isFront || req.session.user.isAdmin)) {
             return [];
           }
+          // LivenessRoomsを表示する会議室のみが対象
+          if (!room.displayLivenessRooms) {
+            return [];
+          }
 
           // LivenessRoomsで登録されたeventを取得
           return sails.helpers.getLroomsEvents(
             [
-              ownerToken,
+              shareToken,
               ownerEmail,
               startTimestamp,
               endTimestamp,
@@ -832,11 +880,13 @@ module.exports = {
                   event &&
                   item.start === event.startDateTime &&
                   item.end === event.endDateTime + event.cleaningTime &&
-                  // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
-                  ((isOwnerMode &&
-                    event.resourcies[room.id].roomStatus === "accepted") ||
-                    (!isOwnerMode &&
-                      event.resourcies[room.id].roomStatus !== "declined"))
+                  // // 代表アカウントの場合、会議室status= 承諾のみ。一般アカウントの場合、辞退以外
+                  // ((isOwnerMode &&
+                  //   event.resourcies[room.id].roomStatus === "accepted") ||
+                  //   (!isOwnerMode &&
+                  //     event.resourcies[room.id].roomStatus !== "declined"))
+                  // キャッシュ化に伴い、無条件に辞退以外は表示
+                  event.resourcies[room.id].roomStatus !== "declined"
               );
               delete eventsDummy[index]; // 次回検索対象から外す
               return index;
@@ -875,8 +925,8 @@ module.exports = {
 
       return res.json({ schedules: schedules, events: events, lrooms: lrooms });
     } catch (err) {
-      sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      sails.log.error("EventController.byRoomWeekly(): ", err.message);
+      return MSGraph.errorHandler(res, err);
     }
   },
 };

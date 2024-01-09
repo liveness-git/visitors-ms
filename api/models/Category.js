@@ -29,6 +29,7 @@ module.exports = {
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
     rooms: { collection: "room" },
+    eventCaches: { collection: "eventcache" },
   },
 
   inputCheck: async (data) => {

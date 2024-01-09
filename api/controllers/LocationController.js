@@ -12,7 +12,7 @@ module.exports = {
       return res.json(Locations);
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
   first: async (req, res) => {
@@ -21,7 +21,7 @@ module.exports = {
       return res.json(Locations[0]);
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -31,7 +31,7 @@ module.exports = {
       return res.json(result);
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -55,7 +55,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ body: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -79,7 +79,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 
@@ -103,7 +103,7 @@ module.exports = {
       }
     } catch (err) {
       sails.log.error(err.message);
-      return res.status(400).json({ errors: err.message });
+      return res.status(500).json({ errorMsg: err.message });
     }
   },
 };
