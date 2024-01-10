@@ -1,5 +1,10 @@
 # visitors-ms
 
+## feature-0.0.1.2-2024-01-10
+
+- `MSCache.updateRoomEvent` で、処理するイベントがキャッシュ済みか確認し、なければ追加、あれば更新処理をする。
+  - modified: api/services/MSCache.js
+
 ## feature-0.0.1.1-2024-01-09
 
 - `patchJob` の `[start, end]` を `MSCache.rangeRetDateForEvent` から取得するように変更
