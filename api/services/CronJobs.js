@@ -76,20 +76,12 @@ module.exports = {
    */
   patchJob: async () => {
     //-------------------
-    // キャッシュログから最新を取得する。
-    const cacheLogs = await CacheLog.find({
-      sort: "start DESC",
-      limit: 1,
-    });
-
-    // キャッシュログに情報がない場合は処理をキャンセルする。
-    if (!cacheLogs || cacheLogs.length === 0) {
+    // 最新キャッシュログから検索範囲(開始日時～終了日時)を取得する。
+    const [start, end] = await MSCache.rangeRetDateForEvent();
+    if (!start || !end) {
       return;
     }
 
-    // 最新キャッシュログから検索範囲(開始日時～終了日時)を取得する。
-    const cacheLog = cacheLogs[0];
-    const { start, end /*, type, mode*/ } = cacheLog;
     const startTimestamp = moment(start);
     const endTimestamp = moment(end);
 
@@ -128,7 +120,7 @@ module.exports = {
         $filter: `categories/any(c:c eq '${MSGraph.getLroomsLabel()}')`,
       });
       // 指定期間のRoomsイベントを全登録
-      await MSCache.updateAllRoomEvents(lrooms);
+      await MSCache.updateAllRoomEvents(lrooms, roomEmail);
     });
   },
 

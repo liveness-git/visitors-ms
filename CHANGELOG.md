@@ -1,5 +1,22 @@
 # visitors-ms
 
+## feature-0.0.1.2-2024-01-10
+
+- `MSCache.updateRoomEvent` で、処理するイベントがキャッシュ済みか確認し、なければ追加、あれば更新処理をする。
+  - modified: api/services/MSCache.js
+
+## feature-0.0.1.1-2024-01-09
+
+- `patchJob` の `[start, end]` を `MSCache.rangeRetDateForEvent` から取得するように変更
+- Rooms の会議室情報取得に `roomEmail` 引数を追加
+  - modified: api/services/CronJobs.js
+- `updateAllRoomEvents` の引数に `email` を追加
+- `removingCaches` 取得時の `where` オプションに `email` を追加
+- `MSCache.deleteRoomEvent` 実行時の `where` オプションに `email` を追加
+- `MSCache.updateRoomEvent` の引数に `email` を追加
+- `RoomEventCache.updateOne` 実行時の `where` オプションに `email` を追加
+  - modified: api/services/MSCache.js
+
 ## feature-0.0.1.0-2023-12-21
 
 - 項目に `iCalUId` を追加
