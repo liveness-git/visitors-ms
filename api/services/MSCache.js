@@ -106,7 +106,7 @@ module.exports = {
    * 最新Roomsイベントリストでキャッシュしたイベントデータを更新する。
    * @param {*} events Graph APIから取得した最新Roomsイベントリスト
    */
-  updateAllRoomEvents: async (events) => {
+  updateAllRoomEvents: async (events, email) => {
     // 取得した最新イベントのiCalUIdリストを作成する。
     const existiCalUIds = events.reduce(
       (acc, event) => [...acc, event.iCalUId],
@@ -115,7 +115,7 @@ module.exports = {
 
     // 最新iCalUIdリストにないiCalUIdを持つキャッシュは削除されていると判断できる。
     const removingCaches = await RoomEventCache.find({
-      where: { iCalUId: { nin: existiCalUIds } },
+      where: { email, iCalUId: { nin: existiCalUIds } },
     });
 
     // 削除されたと判断したキャッシュのiCalUIdを配列にする。
@@ -126,13 +126,13 @@ module.exports = {
 
     // 削除対象のキャッシュを削除する。
     await MSCache.deleteRoomEvent({
-      where: { iCalUId: { in: removingiCalUIds } },
+      where: { email, iCalUId: { in: removingiCalUIds } },
     });
 
     // 取得した最新イベントでキャッシュを更新する。
     await forEach(
       events,
-      async (event) => await MSCache.updateRoomEvent(event)
+      async (event) => await MSCache.updateRoomEvent(event, email)
     );
   },
 
@@ -314,7 +314,7 @@ module.exports = {
   },
 
   // 更新(RoomEvent)
-  updateRoomEvent: async ($event) => {
+  updateRoomEvent: async ($event, email) => {
     const event = _.cloneDeep($event);
 
     //mongodbに保存できないため削除
@@ -322,7 +322,7 @@ module.exports = {
     delete event["@odata.etag"];
 
     await RoomEventCache.updateOne({
-      where: { iCalUId: event.iCalUId },
+      where: { email, iCalUId: event.iCalUId },
     }).set({
       start: new Date(event.start.dateTime),
       end: new Date(event.end.dateTime),
