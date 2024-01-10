@@ -321,13 +321,27 @@ module.exports = {
     delete event["@odata.context"];
     delete event["@odata.etag"];
 
-    await RoomEventCache.updateOne({
-      where: { email, iCalUId: event.iCalUId },
-    }).set({
-      start: new Date(event.start.dateTime),
-      end: new Date(event.end.dateTime),
-      value: event,
+    // キャッシュ済みのイベントかチェックする。
+    const preCheck = await RoomEventCache.findOne({
+      email,
+      iCalUId: event.iCalUId
     });
+
+    // キャッシュになければ追加する。
+    if (!preCheck) {
+      await MSCache.createRoomEvent(event, email);
+    }
+
+    // キャッシュ済みなら更新する。
+    else {
+      await RoomEventCache.updateOne({
+        where: { email, iCalUId: event.iCalUId },
+      }).set({
+        start: new Date(event.start.dateTime),
+        end: new Date(event.end.dateTime),
+        value: event,
+      });
+    }
   },
 
   // 削除(RoomEvent)
