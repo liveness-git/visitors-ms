@@ -1,8 +1,8 @@
 {
-  "name": "LIVENESS_Visitors_for_microsoft_server",
+  "name": "liveness-visitors-for-microsoft-server",
   "private": true,
-  "version": "0.0.0",
-  "description": "a Sails application",
+  "version": "2.0.1",
+  "description": "Liveness Visitors for Microsoft (backend)",
   "keywords": [],
   "dependencies": {
     "@azure/msal-node": "^1.4.0",
@@ -33,7 +33,7 @@
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'",
     "custom-tests": "echo \"(No other custom tests yet.)\" && echo",
-    "zip:master": "git archive master --format=zip -o visitors_ms_v1.0.0.zip",
+    "zip:master": "git archive master --format=zip -o visitors_ms_v2.x.x.zip",
     "install-service": "winser -i -a -n \"LIVENESS Visitors\"",
     "uninstall-service": "winser -r -x -n \"LIVENESS Visitors\""
   },
@@ -42,7 +42,10 @@
     "type": "git",
     "url": "git://github.com/anonymous node/sails user/server.git"
   },
-  "author": "anonymous node/sails user",
+  "contributors": [
+    "r.nishi@liveness.co.jp",
+    "tkondoh@chiburu.com"
+  ],
   "license": "",
   "engines": {
     "node": "^10.19"

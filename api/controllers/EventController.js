@@ -545,7 +545,9 @@ module.exports = {
         // ログインユーザーと関係のある予約を抽出
         events = $events.filter((event) =>
           event.attendees.some(
-            (user) => user.emailAddress.address === req.session.user.email
+            (user) =>
+              user.emailAddress.address.toLowerCase() ===
+              req.session.user.email.toLowerCase()
           )
         );
       }

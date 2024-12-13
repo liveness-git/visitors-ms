@@ -1,4 +1,9 @@
-# visitors-ms
+# visitors-ms backend 変更ログ
+
+## 2.0.1-dev-kondoh.0-2024.12.14
+
+- `EventController.visitList` で、「ログインユーザ＝出席者」の判定に大文字/小文字の区別をしないようにする。
+  - api\controllers\EventController.js
 
 ## feature-0.0.1.2-2024-01-10
 
@@ -27,7 +32,7 @@
   - メソッドに `updateAllEvents` を追加
   - メソッドに `updateAllRoomEvents` を追加
   - メソッド `updateEvent`
-    - `event` に含まれる `@odata.associationLink` を、MongoDBに記録できないため削除
+    - `event` に含まれる `@odata.associationLink` を、MongoDB に記録できないため削除
     - `EventCache.updateOne` に渡す引数を `where` 句で囲う。
   - メソッド `createRoomEvent`
     - `RoomEventCache.create` に渡す引数に `iCalUId` 項目を追加する。
