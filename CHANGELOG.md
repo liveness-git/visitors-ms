@@ -1,5 +1,9 @@
 # visitors-ms backend 変更ログ
 
+## 2.0.1-master.0-2024.12.14
+
+- アセットファイルの更新
+
 ## 2.0.1-dev-kondoh.0-2024.12.14
 
 - `EventController.visitList` で、「ログインユーザ＝出席者」の判定に大文字/小文字の区別をしないようにする。
